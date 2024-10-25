@@ -55,6 +55,7 @@ Welcome to the Perma.cc developer guide.
       <pre>curl {{base_url}}/public/archives/?offset=1</pre>
       <p class="body-text">If you'd prefer a smaller or larger result set, specify the desired size of the pages using the <i>limit</i> parameter. In this example, we request results returned one at a time.</p>
       <pre>curl {{base_url}}/public/archives/?limit=1</pre>
+      <p>You can use the value of <i>next</i> in the <i>meta</i> section of the response to move to the next page of results, but note that <i>next</i> will be populated even if there are no more results at that offset; stop getting more results when <i>objects</i> is an empty list.</p>
 
       <h3 id="examples-in-curl" class="body-bh">Examples in cURL</h3>
       <p class="body-text">Our API documentation is example based, and our examples show you how to interact with the API using the <a href="http://en.wikipedia.org/wiki/CURL">cURL command line utility</a>. A friendly tip - you can add the -v option to help debug your HTTP interactions.</p>
@@ -128,7 +129,7 @@ Welcome to the Perma.cc developer guide.
       <p class="body-text">Use GET to retrieve a list of all of the organizations you belong to or manage.</p>
       <pre>curl -H "Authorization: ApiKey {{ request.user.get_api_key | default:'your-api-key'}}" {{ base_url }}/organizations/</pre>
       <p class="body-text">Response:</p>
-      <pre class="prettyprint">{"meta":{"limit":300,"next":null,"offset":0,"previous":null},"objects":[{"id":4,"name":"Another Library's Journal","registrar":"Another Library","default_to_private":false,"shared_folder":{"id":40,"name":"Another Library's Journal","parent":null,"has_children":true,"path":"40","organization":4}},{"id":9,"name":"Some Org","registrar":"Test Library","default_to_private":false,"shared_folder":{"id":57,"name":"Some Org","parent":null,"has_children":false,"path":"57","organization":9}}]}</pre>
+      <pre class="prettyprint">{"meta":{"limit":300,"next":"{{ base_url }}/organizations/?limit=300&offset=300","offset":0,"previous":null},"objects":[{"id":4,"name":"Another Library's Journal","registrar":"Another Library","default_to_private":false,"shared_folder":{"id":40,"name":"Another Library's Journal","parent":null,"has_children":true,"path":"40","organization":4}},{"id":9,"name":"Some Org","registrar":"Test Library","default_to_private":false,"shared_folder":{"id":57,"name":"Some Org","parent":null,"has_children":false,"path":"57","organization":9}}]}</pre>
 
       <h3 id="get-one-organization" class="body-bh">Get an organization's details</h3>
       <p class="body-text">Use GET to retrieve details about an organization.</p>
@@ -251,7 +252,7 @@ curl -H "Authorization: ApiKey {{ request.user.get_api_key | default:'your-api-k
       <h3 id="view-folder-subfolders" class="body-bh">View a folder's subfolders</h3>
       <p class="body-text">Use GET to list a "parent" folder's "children" (subfolders). Include the ID of the parent folder in the URL.</p>
       <pre>curl -H "Authorization: ApiKey {{ request.user.get_api_key | default:'your-api-key'}}" {{ base_url }}/folders/24/folders</pre>
-      <pre class="prettyprint">{"meta":{"limit":300,"next":null,"offset":0,"previous":null},"objects":[{"id":106,"name":"a new folder","parent":24,"has_children":false,"path":"24-106","organization":null},{"id":74,"name":"Another Folder","parent":24,"has_children":false,"path":"24-74","organization":null}]}</pre>
+      <pre class="prettyprint">{"meta":{"limit":300,"next":"{{ base_url }}/folders/24/folders?limit=300&offset=300","offset":0,"previous":null},"objects":[{"id":106,"name":"a new folder","parent":24,"has_children":false,"path":"24-106","organization":null},{"id":74,"name":"Another Folder","parent":24,"has_children":false,"path":"24-74","organization":null}]}</pre>
       <p class="body-text">"Path" describes the full ancestry of the folder. If folder 36 is nested inside folder 35 and folder 35 is nested in folder 25, the "path" for folder 36 is "25-35-36"</p>
 
       <h3 id="view-folder-archives" class="body-bh">View a folder's archives</h3>
@@ -284,7 +285,7 @@ curl -H "Authorization: ApiKey {{ request.user.get_api_key | default:'your-api-k
       <p class="body-text">Use GET to retrieve a list of all the top-level folders you have access to. This information is also available at the User API endpoint.</p>
       <pre>curl -H "Authorization: ApiKey {{ request.user.get_api_key | default:'your-api-key'}}" {{ base_url }}/folders</pre>
       <p class="body-text">Response:</p>
-      <pre class="prettyprint">{"meta":{"limit":300,"next":null,"offset":0,"previous":null},"objects":[{"id":24,"name":"Personal Links","parent":null,"has_children":true,"path":"24","organization":null},{"id":31,"name":"A Third Journal","parent":null,"has_children":true,"path":"31","organization":3}]}</pre>
+      <pre class="prettyprint">{"meta":{"limit":300,"next":"{{ base_url }}/folders?limit=300&offset=300","offset":0,"previous":null},"objects":[{"id":24,"name":"Personal Links","parent":null,"has_children":true,"path":"24","organization":null},{"id":31,"name":"A Third Journal","parent":null,"has_children":true,"path":"31","organization":3}]}</pre>
       <p class="body-text">Use additional Folders API endpoints to retrieve details about these folders, including listing their subfolders and the archives they contain.</p>
     </div>
   </div>
