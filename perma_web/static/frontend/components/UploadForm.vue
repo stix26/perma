@@ -84,7 +84,8 @@ const handleUploadRequest = async () => {
 
   // error handling
   if (error) {
-    ({formErrors: errors.value, globalError: globalError.value} = getErrorMessages(error, data, response, formDataObj.keys()))
+    captureStatus.value = "ready";
+    ({formErrors: errors.value, globalError: globalError.value} = getErrorMessages(error, data, response, formDataObj.keys()));
     return;
   }
 
