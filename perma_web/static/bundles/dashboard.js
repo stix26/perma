@@ -37712,6 +37712,7 @@ __webpack_require__.r(__webpack_exports__);
     var resetForm = function resetForm() {
       captureStatus.value = 'ready';
       captureErrorMessage.value = '';
+      captureGUID.value = '';
       userLink.value = '';
       userLinkProgressBar.value = '0%';
       clearInterval(progressInterval);
@@ -37824,7 +37825,7 @@ __webpack_require__.r(__webpack_exports__);
     }();
     var handleProgressUpdate = /*#__PURE__*/function () {
       var _ref4 = _babel_runtime_corejs3_helpers_asyncToGenerator__WEBPACK_IMPORTED_MODULE_0___default()( /*#__PURE__*/_babel_runtime_corejs3_regenerator__WEBPACK_IMPORTED_MODULE_1___default.a.mark(function _callee3() {
-        var response, status, _context4, errorMessage;
+        var response, status, _context4, url, errorMessage;
         return _babel_runtime_corejs3_regenerator__WEBPACK_IMPORTED_MODULE_1___default.a.wrap(function _callee3$(_context5) {
           while (1) switch (_context5.prev = _context5.next) {
             case 0:
@@ -37838,8 +37839,9 @@ __webpack_require__.r(__webpack_exports__);
                 userLinkProgressBar.value = "".concat(Math.round(response.step_count / 5 * 100), "%");
               }
               if (status === 'completed') {
+                url = _babel_runtime_corejs3_core_js_stable_instance_concat__WEBPACK_IMPORTED_MODULE_4___default()(_context4 = "".concat(window.location.origin, "/")).call(_context4, captureGUID.value);
                 resetForm();
-                window.location.href = _babel_runtime_corejs3_core_js_stable_instance_concat__WEBPACK_IMPORTED_MODULE_4___default()(_context4 = "".concat(window.location.origin, "/")).call(_context4, captureGUID.value);
+                window.location.href = url;
               }
               if (status === 'failed') {
                 errorMessage = response.error.length ? Object(_lib_errors__WEBPACK_IMPORTED_MODULE_15__["getErrorFromNestedObject"])(JSON.parse(response.error)) : _lib_errors__WEBPACK_IMPORTED_MODULE_15__["defaultError"];
@@ -42229,7 +42231,7 @@ var getErrorMessages = function getErrorMessages(error, data, response) {
   if (data && _babel_runtime_corejs3_core_js_stable_object_keys__WEBPACK_IMPORTED_MODULE_5___default()(data).length > 0) {
     var _context4;
     // form field errors
-    if (formFields.length > 0) {
+    if (formFields) {
       var matches = {};
       var _iterator = _createForOfIteratorHelper(formFields),
         _step;
@@ -43442,7 +43444,7 @@ __webpack_require__.r(__webpack_exports__);
       } else if (_babel_runtime_corejs3_core_js_stable_instance_includes__WEBPACK_IMPORTED_MODULE_0___default()(errorMessage).call(errorMessage, "subscription")) {
         showUploadLink.value = false;
         showGeneric.value = false;
-      } else if (_babel_runtime_corejs3_core_js_stable_instance_includes__WEBPACK_IMPORTED_MODULE_0___default()(errorMessage).call(errorMessage, "Error 0") || _babel_runtime_corejs3_core_js_stable_instance_includes__WEBPACK_IMPORTED_MODULE_0___default()(errorMessage).call(errorMessage, "folder")) {
+      } else if (_babel_runtime_corejs3_core_js_stable_instance_includes__WEBPACK_IMPORTED_MODULE_0___default()(errorMessage).call(errorMessage, "Error 0") || _babel_runtime_corejs3_core_js_stable_instance_includes__WEBPACK_IMPORTED_MODULE_0___default()(errorMessage).call(errorMessage, "folder") || _babel_runtime_corejs3_core_js_stable_instance_includes__WEBPACK_IMPORTED_MODULE_0___default()(errorMessage).call(errorMessage, "URL cannot be empty")) {
         showUploadLink.value = false;
       } else if (_babel_runtime_corejs3_core_js_stable_instance_includes__WEBPACK_IMPORTED_MODULE_0___default()(errorMessage).call(errorMessage, "account needs attention")) {
         showUploadLink.value = false;
@@ -43774,19 +43776,20 @@ __webpack_require__.r(__webpack_exports__);
               error = _yield$fetchDataOrErr.error;
               response = _yield$fetchDataOrErr.response;
               if (!error) {
-                _context2.next = 27;
+                _context2.next = 28;
                 break;
               }
+              captureStatus.value = "ready";
               _getErrorMessages = Object(_lib_errors__WEBPACK_IMPORTED_MODULE_12__["getErrorMessages"])(error, data, response, _babel_runtime_corejs3_core_js_stable_instance_keys__WEBPACK_IMPORTED_MODULE_3___default()(formDataObj).call(formDataObj));
               errors.value = _getErrorMessages.formErrors;
               globalError.value = _getErrorMessages.globalError;
               return _context2.abrupt("return");
-            case 27:
+            case 28:
               // success
               guid = data.guid;
               globalStore.components.createLink.resetForm();
               window.location.href = _babel_runtime_corejs3_core_js_stable_instance_concat__WEBPACK_IMPORTED_MODULE_4___default()(_context = "".concat(window.location.origin, "/")).call(_context, guid);
-            case 30:
+            case 31:
             case "end":
               return _context2.stop();
           }

@@ -76,7 +76,7 @@ export const getErrorMessages = (error, data, response, formFields = []) => {
   // response received from server, and it came with a json payload
   if (data && Object.keys(data).length > 0) {
     // form field errors
-    if (formFields.length > 0) {
+    if (formFields) {
       let matches = {};
       for (const field of formFields) {
         if (data.hasOwnProperty(field)) {

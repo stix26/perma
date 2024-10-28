@@ -43,7 +43,7 @@ watch(
       } else if (errorMessage.includes("subscription")) {
         showUploadLink.value = false;
         showGeneric.value = false;
-      } else if (errorMessage.includes("Error 0") || errorMessage.includes("folder")) {
+      } else if (errorMessage.includes("Error 0") || errorMessage.includes("folder") || errorMessage.includes("URL cannot be empty")) {
         showUploadLink.value = false;
       } else if (errorMessage.includes("account needs attention")) {
         showUploadLink.value = false;
