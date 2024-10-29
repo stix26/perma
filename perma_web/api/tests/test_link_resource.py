@@ -419,7 +419,7 @@ class LinkResourceTransactionTestCase(LinkResourceTestMixin, ApiResourceTransact
         else:
             software_pattern = r'scoop @ harvard library innovation lab: \d+\.\d+.\d+'
         self.assertRegex(link.captured_by_software, software_pattern)
-        expected_size = 7960
+        expected_size = 15140
         self.assertLessEqual(abs(link.warc_size-expected_size), 100)
 
         # check folder

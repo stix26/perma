@@ -124,7 +124,7 @@ SCOOP_CLI_OPTIONS = {
     # "--signing-url": "https://authsign.lil.tools/sign",
     # "--signing-token": "",
     "--screenshot": "true",
-    "--pdf-snapshot": "false",
+    "--pdf-snapshot": "true",
     "--dom-snapshot": "true",
     "--capture-video-as-attachment": "true",
     "--capture-certificates-as-attachment": "true",
