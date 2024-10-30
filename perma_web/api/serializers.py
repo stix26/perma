@@ -1,6 +1,7 @@
 from django.conf import settings
 from django.core.exceptions import ObjectDoesNotExist, ValidationError
 from django.core.validators import URLValidator
+from django.db.models import F
 import requests
 from rest_framework import serializers
 
@@ -47,8 +48,15 @@ class LinkUserSerializer(BaseSerializer):
         return field_names
 
     def get_top_level_folders(self, user):
-        serializer = FolderSerializer(user.top_level_folders(), many=True)
-        return serializer.data
+        # For users with a lot of top level folders, like admins, building Folder objects and serializing
+        # with FolderSerializer is very slow. Instead, fetch a list of dicts directly with values(). Equivalent to:
+        # return FolderSerializer(user.top_level_folders(), many=True).data
+        return list(user.top_level_folders().annotate(
+            has_children=F('cached_has_children'),
+            path=F('cached_path'),
+        ).values(
+            *FolderSerializer.Meta.fields,
+        ))
 
 
 ### FOLDER ###
