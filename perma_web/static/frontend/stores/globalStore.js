@@ -29,6 +29,7 @@ export const useGlobalStore = defineStore('global', {
       linkList: null,
     },
     toasts: [],
+    urls: {},
   }),
   actions: {
     setLinksRemainingFromGlobals(linksRemaining, isNonpaying) {
