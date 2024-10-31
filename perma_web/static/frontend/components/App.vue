@@ -14,6 +14,7 @@ onBeforeMount(() => {
   globalStore.linkCreationAllowed = link_creation_allowed;
   globalStore.subscriptionStatus = subscription_status;
   globalStore.maxSize = max_size;
+  globalStore.urls = urls;
 })
 </script>
 

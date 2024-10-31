@@ -37241,6 +37241,7 @@ __webpack_require__.r(__webpack_exports__);
       globalStore.linkCreationAllowed = link_creation_allowed;
       globalStore.subscriptionStatus = subscription_status;
       globalStore.maxSize = max_size;
+      globalStore.urls = urls;
     });
     var __returned__ = {
       globalStore: globalStore,
@@ -41563,7 +41564,8 @@ var useGlobalStore = Object(pinia__WEBPACK_IMPORTED_MODULE_5__["defineStore"])('
         jstree: null,
         linkList: null
       },
-      toasts: []
+      toasts: [],
+      urls: {}
     };
   },
   actions: {
@@ -43358,9 +43360,7 @@ var _hoisted_6 = /*#__PURE__*/Object(vue__WEBPACK_IMPORTED_MODULE_0__["createEle
 var _hoisted_7 = {
   key: 0
 };
-var _hoisted_8 = /*#__PURE__*/Object(vue__WEBPACK_IMPORTED_MODULE_0__["createElementVNode"])("a", {
-  href: "{{contact_url}}"
-}, "contact us about this error.", -1 /* HOISTED */);
+var _hoisted_8 = ["href"];
 function render(_ctx, _cache, $props, $setup, $data, $options) {
   return Object(vue__WEBPACK_IMPORTED_MODULE_0__["openBlock"])(), Object(vue__WEBPACK_IMPORTED_MODULE_0__["createElementBlock"])(vue__WEBPACK_IMPORTED_MODULE_0__["Fragment"], null, [Object(vue__WEBPACK_IMPORTED_MODULE_0__["createElementVNode"])("div", _hoisted_1, [Object(vue__WEBPACK_IMPORTED_MODULE_0__["createElementVNode"])("p", _hoisted_2, [$setup.showLoginLink ? (Object(vue__WEBPACK_IMPORTED_MODULE_0__["openBlock"])(), Object(vue__WEBPACK_IMPORTED_MODULE_0__["createElementBlock"])(vue__WEBPACK_IMPORTED_MODULE_0__["Fragment"], {
     key: 0
@@ -43370,7 +43370,9 @@ function render(_ctx, _cache, $props, $setup, $data, $options) {
     onClick: Object(vue__WEBPACK_IMPORTED_MODULE_0__["withModifiers"])($setup.handleOpen, ["prevent"])
   }, "upload your own archive" + Object(vue__WEBPACK_IMPORTED_MODULE_0__["toDisplayString"])($setup.showContactLink ? '' : '.'), 1 /* TEXT */), $setup.showContactLink ? (Object(vue__WEBPACK_IMPORTED_MODULE_0__["openBlock"])(), Object(vue__WEBPACK_IMPORTED_MODULE_0__["createElementBlock"])(vue__WEBPACK_IMPORTED_MODULE_0__["Fragment"], {
     key: 0
-  }, [Object(vue__WEBPACK_IMPORTED_MODULE_0__["createTextVNode"])(" or "), _hoisted_8], 64 /* STABLE_FRAGMENT */)) : Object(vue__WEBPACK_IMPORTED_MODULE_0__["createCommentVNode"])("v-if", true)])) : Object(vue__WEBPACK_IMPORTED_MODULE_0__["createCommentVNode"])("v-if", true)]), $setup.showUploadLink ? (Object(vue__WEBPACK_IMPORTED_MODULE_0__["openBlock"])(), Object(vue__WEBPACK_IMPORTED_MODULE_0__["createBlock"])($setup["UploadForm"], {
+  }, [Object(vue__WEBPACK_IMPORTED_MODULE_0__["createTextVNode"])(" or "), Object(vue__WEBPACK_IMPORTED_MODULE_0__["createElementVNode"])("a", {
+    href: $setup.globalStore.urls.contact
+  }, "contact us about this error.", 8 /* PROPS */, _hoisted_8)], 64 /* STABLE_FRAGMENT */)) : Object(vue__WEBPACK_IMPORTED_MODULE_0__["createCommentVNode"])("v-if", true)])) : Object(vue__WEBPACK_IMPORTED_MODULE_0__["createCommentVNode"])("v-if", true)]), $setup.showUploadLink ? (Object(vue__WEBPACK_IMPORTED_MODULE_0__["openBlock"])(), Object(vue__WEBPACK_IMPORTED_MODULE_0__["createBlock"])($setup["UploadForm"], {
     key: 0,
     ref: "uploadDialogRef",
     captureGUID: $props.captureGUID

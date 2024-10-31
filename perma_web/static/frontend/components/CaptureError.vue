@@ -72,7 +72,7 @@ defineExpose({
       You can
       <button @click.prevent="handleOpen">upload your own archive{{ showContactLink ? '' : '.'}}</button>
       <template v-if="showContactLink"> or
-        <a href="{{contact_url}}">contact us about this error.</a>
+        <a :href="globalStore.urls.contact">contact us about this error.</a>
       </template>
     </p>
   </div>
