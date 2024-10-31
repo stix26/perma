@@ -54229,7 +54229,7 @@ var _hoisted_3 = {
   class: "links-remaining"
 };
 var _hoisted_4 = ["onKeydown"];
-var _hoisted_5 = ["data-index", "data-id"];
+var _hoisted_5 = ["data-index", "data-id", "aria-selected"];
 var _hoisted_6 = {
   key: 0,
   class: "dropdown-item-supplement ui-private"
@@ -54283,7 +54283,9 @@ function render(_ctx, _cache, $props, $setup, $data, $options) {
       tabindex: "-1",
       class: "dropdown-item",
       "data-index": index,
-      "data-id": folder.id
+      "data-id": folder.id,
+      role: "option",
+      "aria-selected": $setup.selectedFolder.folderId === folder.id
     }, [Object(vue__WEBPACK_IMPORTED_MODULE_0__["createTextVNode"])(Object(vue__WEBPACK_IMPORTED_MODULE_0__["toDisplayString"])(folder.name) + " ", 1 /* TEXT */), folder.default_to_private ? (Object(vue__WEBPACK_IMPORTED_MODULE_0__["openBlock"])(), Object(vue__WEBPACK_IMPORTED_MODULE_0__["createElementBlock"])("span", _hoisted_6, "(Private)")) : Object(vue__WEBPACK_IMPORTED_MODULE_0__["createCommentVNode"])("v-if", true), folder.read_only ? (Object(vue__WEBPACK_IMPORTED_MODULE_0__["openBlock"])(), Object(vue__WEBPACK_IMPORTED_MODULE_0__["createElementBlock"])("span", _hoisted_7, "0")) : folder.personal ? (Object(vue__WEBPACK_IMPORTED_MODULE_0__["openBlock"])(), Object(vue__WEBPACK_IMPORTED_MODULE_0__["createElementBlock"])("span", _hoisted_8, Object(vue__WEBPACK_IMPORTED_MODULE_0__["toDisplayString"])($setup.globalStore.linksRemaining === Infinity ? 'unlimited' : $setup.globalStore.linksRemaining), 1 /* TEXT */)) : (Object(vue__WEBPACK_IMPORTED_MODULE_0__["openBlock"])(), Object(vue__WEBPACK_IMPORTED_MODULE_0__["createElementBlock"])("span", {
       key: 3,
       class: Object(vue__WEBPACK_IMPORTED_MODULE_0__["normalizeClass"])(["dropdown-item-supplement links-unlimited", {
