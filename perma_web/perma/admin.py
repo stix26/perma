@@ -629,12 +629,12 @@ class LinkAdmin(SimpleHistoryAdmin):
         IAFileInline
     ]
     raw_id_fields = ['created_by','replacement_link']
-
+    ordering = ['-creation_timestamp', 'guid']
     paginator = FasterAdminPaginator
     show_full_result_count = False
 
     def get_queryset(self, request):
-        qs = super(LinkAdmin, self).get_queryset(request).select_related('created_by', 'capture_job').prefetch_related('tags')
+        qs = super(LinkAdmin, self).get_queryset(request).select_related('created_by').prefetch_related('tags')
         qs.query.where = WhereNode()  # reset filters to include "deleted" objs
         return qs
 
