@@ -23,21 +23,21 @@ class CurrentUserResourceTestCase(ApiResourceTestCase):
     def test_get_self_detail_json(self):
         cases = [
             (self.regular_user, [
-                {'id': 25, 'name': 'Personal Links', 'parent': None, 'organization': None, 'sponsored_by': None, 'is_sponsored_root_folder': False, 'read_only': False, 'has_children': True, 'path': '25'},
+                {'id': 25, 'name': 'Personal Links', 'parent': None, 'organization': None, 'sponsored_by': None, 'is_sponsored_root_folder': False, 'read_only': False, 'has_children': True, 'path': '25', 'registrar': None, 'registrar_name': None, 'default_to_private': False},
             ]),
             (self.org_user, [
-                {'id': 24, 'name': 'Personal Links', 'parent': None, 'organization': None, 'sponsored_by': None, 'is_sponsored_root_folder': False, 'read_only': False, 'has_children': False, 'path': '24'},
-                {'id': 27, 'name': 'Test Journal', 'parent': None, 'organization': 1, 'sponsored_by': None, 'is_sponsored_root_folder': False, 'read_only': False, 'has_children': True, 'path': '27'}
+                {'id': 24, 'name': 'Personal Links', 'parent': None, 'organization': None, 'sponsored_by': None, 'is_sponsored_root_folder': False, 'read_only': False, 'has_children': False, 'path': '24', 'registrar': None, 'registrar_name': None, 'default_to_private': False},
+                {'id': 27, 'name': 'Test Journal', 'parent': None, 'organization': 1, 'sponsored_by': None, 'is_sponsored_root_folder': False, 'read_only': False, 'has_children': True, 'path': '27', 'registrar': 1, 'registrar_name': 'Test Library', 'default_to_private': False},
             ]),
             (self.registrar_user, [
-                {'id': 23, 'name': 'Personal Links', 'parent': None, 'organization': None, 'sponsored_by': None, 'is_sponsored_root_folder': False, 'read_only': False, 'has_children': False, 'path': '23'},
-                {'id': 28, 'name': 'Another Journal', 'parent': None, 'organization': 2, 'sponsored_by': None, 'is_sponsored_root_folder': False, 'read_only': False, 'has_children': True, 'path': '28'},
-                {'id': 31, 'name': 'A Third Journal', 'parent': None, 'organization': 3, 'sponsored_by': None, 'is_sponsored_root_folder': False, 'read_only': False, 'has_children': True, 'path': '31'},
-                {'id': 27, 'name': 'Test Journal', 'parent': None, 'organization': 1, 'sponsored_by': None, 'is_sponsored_root_folder': False, 'read_only': False, 'has_children': True, 'path': '27'},
+                {'id': 23, 'name': 'Personal Links', 'parent': None, 'organization': None, 'sponsored_by': None, 'is_sponsored_root_folder': False, 'read_only': False, 'has_children': False, 'path': '23', 'registrar': None, 'registrar_name': None, 'default_to_private': False},
+                {'id': 28, 'name': 'Another Journal', 'parent': None, 'organization': 2, 'sponsored_by': None, 'is_sponsored_root_folder': False, 'read_only': False, 'has_children': True, 'path': '28', 'registrar': 1, 'registrar_name': 'Test Library', 'default_to_private': False},
+                {'id': 31, 'name': 'A Third Journal', 'parent': None, 'organization': 3, 'sponsored_by': None, 'is_sponsored_root_folder': False, 'read_only': False, 'has_children': True, 'path': '31', 'registrar': 1, 'registrar_name': 'Test Library', 'default_to_private': False},
+                {'id': 27, 'name': 'Test Journal', 'parent': None, 'organization': 1, 'sponsored_by': None, 'is_sponsored_root_folder': False, 'read_only': False, 'has_children': True, 'path': '27', 'registrar': 1, 'registrar_name': 'Test Library', 'default_to_private': False},
             ]),
             (self.sponsored_user, [
-                {'id': 55, 'name': 'Personal Links', 'parent': None, 'organization': None, 'sponsored_by': None, 'is_sponsored_root_folder': False, 'read_only': False, 'has_children': False, 'path': '55'},
-                {'id': 59, 'name': 'Sponsored Links', 'parent': None, 'organization': None, 'sponsored_by': None, 'is_sponsored_root_folder': True, 'read_only': False, 'has_children': True, 'path': '59'},
+                {'id': 55, 'name': 'Personal Links', 'parent': None, 'organization': None, 'sponsored_by': None, 'is_sponsored_root_folder': False, 'read_only': False, 'has_children': False, 'path': '55', 'registrar': None, 'registrar_name': None, 'default_to_private': False},
+                {'id': 59, 'name': 'Sponsored Links', 'parent': None, 'organization': None, 'sponsored_by': None, 'is_sponsored_root_folder': True, 'read_only': False, 'has_children': True, 'path': '59', 'registrar': None, 'registrar_name': None, 'default_to_private': False},
             ]),
         ]
         for user, top_level_folders in cases:

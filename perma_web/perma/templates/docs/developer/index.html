@@ -109,8 +109,33 @@ Welcome to the Perma.cc developer guide.
       <p class="body-text">Use GET to retrieve your account details. (You only have access to your own account.)</p>
       <pre>curl -H "Authorization: ApiKey {{ request.user.get_api_key | default:'your-api-key'}}" {{ base_url }}/user/</pre>
       <p class="body-text">The response includes your user ID and a list of all the top-level folders you have access to. For more information about these folders, their subfolders, and their associated organizations, use the Folders and Organizations API endpoints.</p>
-      <pre class="prettyprint">{"id": 4, "first_name": "Jane", "last_name": "Doe", "full_name": "Jane Doe", "short_name": "Jane", "top_level_folders":[{"id":25,"name":"Personal Links","parent":null,"has_children":true,"path":"25","organization":null}]}</pre>
-
+      <pre class="prettyprint">
+        {
+          "id": 4,
+          "first_name": "Jane",
+          "last_name": "Doe",
+          "full_name": "Jane Doe",
+          "short_name": "Jane",
+          "top_level_folders": [
+            {
+              "id": 25,
+              "name": "Personal Links",
+              "parent": null,
+              "organization": null,
+              "sponsored_by": null,
+              "is_sponsored_root_folder": false,
+              "read_only": false,
+              "has_children": false,
+              "path": "25",
+              "registrar": null,
+              "registrar_name": null,
+              "default_to_private": false
+            }
+          ]
+        }
+      </pre>
+      In addition to the keys returned by the folder endpoing, top_level_folders also includes some extra fields that are useful for displaying a user's affiliations:
+      <code>registrar</code>, <code>registrar_name</code>, and <code>default_to_private</code>.
     </div>
   </div>
 </div>

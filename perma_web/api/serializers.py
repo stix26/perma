@@ -1,7 +1,7 @@
 from django.conf import settings
 from django.core.exceptions import ObjectDoesNotExist, ValidationError
 from django.core.validators import URLValidator
-from django.db.models import F
+from django.db.models import F, Case, When, Value, BooleanField
 import requests
 from rest_framework import serializers
 
@@ -49,13 +49,30 @@ class LinkUserSerializer(BaseSerializer):
 
     def get_top_level_folders(self, user):
         # For users with a lot of top level folders, like admins, building Folder objects and serializing
-        # with FolderSerializer is very slow. Instead, fetch a list of dicts directly with values(). Equivalent to:
-        # return FolderSerializer(user.top_level_folders(), many=True).data
-        return list(user.top_level_folders().annotate(
+        # with FolderSerializer is very slow. Instead, fetch a list of dicts directly with values().
+        return list(user.top_level_folders().select_related('organization__registrar').annotate(
             has_children=F('cached_has_children'),
             path=F('cached_path'),
+            registrar=F('organization__registrar_id'),
+            registrar_name=F('organization__registrar__name'),
+            default_to_private=Case(
+                When(organization__isnull=True, then=Value(False)),
+                default=F('organization__default_to_private'),
+                output_field=BooleanField()
+            ),
         ).values(
-            *FolderSerializer.Meta.fields,
+            'id',
+            'name', 
+            'parent',
+            'has_children',
+            'path',
+            'organization',
+            'registrar',
+            'registrar_name',
+            'sponsored_by',
+            'is_sponsored_root_folder',
+            'read_only',
+            'default_to_private',
         ))
 
 
