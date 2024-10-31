@@ -2186,6 +2186,11 @@ class CaptureJob(models.Model):
     def __str__(self):
         return f"CaptureJob {self.pk}: {self.link_id}"
 
+    class Meta:
+        indexes = [
+            models.Index(fields=['capture_start_time']),
+        ]
+
     def save(self, *args, **kwargs):
 
         # If this job does not have an order yet (just created),
