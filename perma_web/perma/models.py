@@ -1696,7 +1696,8 @@ class Link(DeletableModel):
         indexes = [
             models.Index(fields=['user_deleted', 'is_private', 'is_unlisted', 'cached_can_play_back', 'internet_archive_upload_status']),
             models.Index('user_deleted', TruncDate('creation_timestamp'), 'is_private', 'is_unlisted', 'cached_can_play_back', name="ia_eligible_for_date_idx"),
-            models.Index(fields=['creation_timestamp']),
+            models.Index(fields=['creation_timestamp', 'guid']),
+            models.Index(fields=['-creation_timestamp', 'guid']),
             models.Index(fields=['submitted_url_surt']),
             GinIndex(OpClass(Upper('guid'), name='gin_trgm_ops'), name='guid_case_insensitive_idx'),
         ]
@@ -2184,6 +2185,11 @@ class CaptureJob(models.Model):
 
     def __str__(self):
         return f"CaptureJob {self.pk}: {self.link_id}"
+
+    class Meta:
+        indexes = [
+            models.Index(fields=['capture_start_time']),
+        ]
 
     def save(self, *args, **kwargs):
 

@@ -442,6 +442,23 @@ module.exports = function (it) {
 
 /***/ }),
 
+/***/ 278:
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+var classof = __webpack_require__(79);
+
+var $String = String;
+
+module.exports = function (argument) {
+  if (classof(argument) === 'Symbol') throw new TypeError('Cannot convert a Symbol value to a string');
+  return $String(argument);
+};
+
+
+/***/ }),
+
 /***/ 28:
 /***/ (function(module, exports, __webpack_require__) {
 
@@ -753,16 +770,21 @@ module.exports = function (argument) {
 
 "use strict";
 __webpack_require__.r(__webpack_exports__);
-/* WEBPACK VAR INJECTION */(function($) {/* harmony import */ var _babel_runtime_corejs3_core_js_stable_set_interval__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(389);
-/* harmony import */ var _babel_runtime_corejs3_core_js_stable_set_interval__WEBPACK_IMPORTED_MODULE_0___default = /*#__PURE__*/__webpack_require__.n(_babel_runtime_corejs3_core_js_stable_set_interval__WEBPACK_IMPORTED_MODULE_0__);
-/* harmony import */ var _babel_runtime_corejs3_core_js_stable_set_timeout__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(2);
-/* harmony import */ var _babel_runtime_corejs3_core_js_stable_set_timeout__WEBPACK_IMPORTED_MODULE_1___default = /*#__PURE__*/__webpack_require__.n(_babel_runtime_corejs3_core_js_stable_set_timeout__WEBPACK_IMPORTED_MODULE_1__);
+/* WEBPACK VAR INJECTION */(function($) {/* harmony import */ var _babel_runtime_corejs3_core_js_stable_instance_ends_with__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(750);
+/* harmony import */ var _babel_runtime_corejs3_core_js_stable_instance_ends_with__WEBPACK_IMPORTED_MODULE_0___default = /*#__PURE__*/__webpack_require__.n(_babel_runtime_corejs3_core_js_stable_instance_ends_with__WEBPACK_IMPORTED_MODULE_0__);
+/* harmony import */ var _babel_runtime_corejs3_core_js_stable_set_interval__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(389);
+/* harmony import */ var _babel_runtime_corejs3_core_js_stable_set_interval__WEBPACK_IMPORTED_MODULE_1___default = /*#__PURE__*/__webpack_require__.n(_babel_runtime_corejs3_core_js_stable_set_interval__WEBPACK_IMPORTED_MODULE_1__);
+/* harmony import */ var _babel_runtime_corejs3_core_js_stable_set_timeout__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(2);
+/* harmony import */ var _babel_runtime_corejs3_core_js_stable_set_timeout__WEBPACK_IMPORTED_MODULE_2___default = /*#__PURE__*/__webpack_require__.n(_babel_runtime_corejs3_core_js_stable_set_timeout__WEBPACK_IMPORTED_MODULE_2__);
+
 
 
 var DOMHelpers = __webpack_require__(290);
 var HandlebarsHelpers = __webpack_require__(391);
 function fillSection(name, callback) {
-  $.getJSON(location.pathname + "/" + name).then(function (data) {
+  var path = location.pathname;
+  path += _babel_runtime_corejs3_core_js_stable_instance_ends_with__WEBPACK_IMPORTED_MODULE_0___default()(path).call(path, "/") ? "" : "/";
+  $.getJSON(path + name).then(function (data) {
     if (name == 'celery' && (!data.queues || !Boolean(data.queues.length))) {
       // If no data was returned, don't redraw the section.
       return;
@@ -783,13 +805,13 @@ fillSection("random");
 fillSection("emails");
 
 // Refresh the celery queue job counts automatically
-_babel_runtime_corejs3_core_js_stable_set_interval__WEBPACK_IMPORTED_MODULE_0___default()(function () {
+_babel_runtime_corejs3_core_js_stable_set_interval__WEBPACK_IMPORTED_MODULE_1___default()(function () {
   fillSection("celery_queues");
 }, 2000);
 
 // Start refreshing the list of celery works and the jobs they are processing on button press
 function refresh_celery_jobs() {
-  return _babel_runtime_corejs3_core_js_stable_set_interval__WEBPACK_IMPORTED_MODULE_0___default()(function () {
+  return _babel_runtime_corejs3_core_js_stable_set_interval__WEBPACK_IMPORTED_MODULE_1___default()(function () {
     fillSection("celery");
   }, 2000);
 }
@@ -812,13 +834,13 @@ function refresh_rate_limits() {
   status.innerText = 'Refreshing...';
   fillSection("rate_limits", function () {
     status.innerText = 'Refreshed!';
-    _babel_runtime_corejs3_core_js_stable_set_timeout__WEBPACK_IMPORTED_MODULE_1___default()(function () {
+    _babel_runtime_corejs3_core_js_stable_set_timeout__WEBPACK_IMPORTED_MODULE_2___default()(function () {
       return status.innerText = '';
     }, 2000);
   });
 }
 function auto_refresh_rate_limits() {
-  return _babel_runtime_corejs3_core_js_stable_set_interval__WEBPACK_IMPORTED_MODULE_0___default()(function () {
+  return _babel_runtime_corejs3_core_js_stable_set_interval__WEBPACK_IMPORTED_MODULE_1___default()(function () {
     refresh_rate_limits();
   }, 15000);
 }
@@ -840,7 +862,7 @@ document.getElementById('auto-refresh-rate-limits').addEventListener('click', fu
 
 // Start refreshing the list of capture jobs on button press
 function refresh_capture_jobs() {
-  return _babel_runtime_corejs3_core_js_stable_set_interval__WEBPACK_IMPORTED_MODULE_0___default()(function () {
+  return _babel_runtime_corejs3_core_js_stable_set_interval__WEBPACK_IMPORTED_MODULE_1___default()(function () {
     fillSection("job_queue");
   }, 2000);
 }
@@ -863,13 +885,13 @@ function refresh_capture_errors() {
   status.innerText = 'Refreshing...';
   fillSection("capture_errors", function () {
     status.innerText = 'Refreshed!';
-    _babel_runtime_corejs3_core_js_stable_set_timeout__WEBPACK_IMPORTED_MODULE_1___default()(function () {
+    _babel_runtime_corejs3_core_js_stable_set_timeout__WEBPACK_IMPORTED_MODULE_2___default()(function () {
       return status.innerText = '';
     }, 2000);
   });
 }
 function auto_refresh_capture_errors() {
-  return _babel_runtime_corejs3_core_js_stable_set_interval__WEBPACK_IMPORTED_MODULE_0___default()(function () {
+  return _babel_runtime_corejs3_core_js_stable_set_interval__WEBPACK_IMPORTED_MODULE_1___default()(function () {
     refresh_capture_errors();
   }, 15000);
 }
@@ -1100,6 +1122,69 @@ var store = module.exports = globalThis[SHARED] || defineGlobalProperty(SHARED, 
 "use strict";
 
 module.exports = true;
+
+
+/***/ }),
+
+/***/ 431:
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+var isRegExp = __webpack_require__(432);
+
+var $TypeError = TypeError;
+
+module.exports = function (it) {
+  if (isRegExp(it)) {
+    throw new $TypeError("The method doesn't accept regular expressions");
+  } return it;
+};
+
+
+/***/ }),
+
+/***/ 432:
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+var isObject = __webpack_require__(27);
+var classof = __webpack_require__(13);
+var wellKnownSymbol = __webpack_require__(40);
+
+var MATCH = wellKnownSymbol('match');
+
+// `IsRegExp` abstract operation
+// https://tc39.es/ecma262/#sec-isregexp
+module.exports = function (it) {
+  var isRegExp;
+  return isObject(it) && ((isRegExp = it[MATCH]) !== undefined ? !!isRegExp : classof(it) === 'RegExp');
+};
+
+
+/***/ }),
+
+/***/ 433:
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+var wellKnownSymbol = __webpack_require__(40);
+
+var MATCH = wellKnownSymbol('match');
+
+module.exports = function (METHOD_NAME) {
+  var regexp = /./;
+  try {
+    '/./'[METHOD_NAME](regexp);
+  } catch (error1) {
+    try {
+      regexp[MATCH] = false;
+      return '/./'[METHOD_NAME](regexp);
+    } catch (error2) { /* empty */ }
+  } return false;
+};
 
 
 /***/ }),
@@ -12362,6 +12447,193 @@ module.exports =
 
 /***/ }),
 
+/***/ 72:
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+var toIntegerOrInfinity = __webpack_require__(73);
+
+var min = Math.min;
+
+// `ToLength` abstract operation
+// https://tc39.es/ecma262/#sec-tolength
+module.exports = function (argument) {
+  var len = toIntegerOrInfinity(argument);
+  return len > 0 ? min(len, 0x1FFFFFFFFFFFFF) : 0; // 2 ** 53 - 1 == 9007199254740991
+};
+
+
+/***/ }),
+
+/***/ 73:
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+var trunc = __webpack_require__(74);
+
+// `ToIntegerOrInfinity` abstract operation
+// https://tc39.es/ecma262/#sec-tointegerorinfinity
+module.exports = function (argument) {
+  var number = +argument;
+  // eslint-disable-next-line no-self-compare -- NaN check
+  return number !== number || number === 0 ? 0 : trunc(number);
+};
+
+
+/***/ }),
+
+/***/ 74:
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+var ceil = Math.ceil;
+var floor = Math.floor;
+
+// `Math.trunc` method
+// https://tc39.es/ecma262/#sec-math.trunc
+// eslint-disable-next-line es/no-math-trunc -- safe
+module.exports = Math.trunc || function trunc(x) {
+  var n = +x;
+  return (n > 0 ? floor : ceil)(n);
+};
+
+
+/***/ }),
+
+/***/ 750:
+/***/ (function(module, exports, __webpack_require__) {
+
+module.exports = __webpack_require__(751);
+
+/***/ }),
+
+/***/ 751:
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+var parent = __webpack_require__(752);
+
+module.exports = parent;
+
+
+/***/ }),
+
+/***/ 752:
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+var isPrototypeOf = __webpack_require__(31);
+var method = __webpack_require__(753);
+
+var StringPrototype = String.prototype;
+
+module.exports = function (it) {
+  var own = it.endsWith;
+  return typeof it == 'string' || it === StringPrototype
+    || (isPrototypeOf(StringPrototype, it) && own === StringPrototype.endsWith) ? method : own;
+};
+
+
+/***/ }),
+
+/***/ 753:
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+__webpack_require__(754);
+var getBuiltInPrototypeMethod = __webpack_require__(83);
+
+module.exports = getBuiltInPrototypeMethod('String', 'endsWith');
+
+
+/***/ }),
+
+/***/ 754:
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+var $ = __webpack_require__(6);
+var uncurryThis = __webpack_require__(12);
+var getOwnPropertyDescriptor = __webpack_require__(16).f;
+var toLength = __webpack_require__(72);
+var toString = __webpack_require__(278);
+var notARegExp = __webpack_require__(431);
+var requireObjectCoercible = __webpack_require__(23);
+var correctIsRegExpLogic = __webpack_require__(433);
+var IS_PURE = __webpack_require__(43);
+
+var slice = uncurryThis(''.slice);
+var min = Math.min;
+
+var CORRECT_IS_REGEXP_LOGIC = correctIsRegExpLogic('endsWith');
+// https://github.com/zloirock/core-js/pull/702
+var MDN_POLYFILL_BUG = !IS_PURE && !CORRECT_IS_REGEXP_LOGIC && !!function () {
+  var descriptor = getOwnPropertyDescriptor(String.prototype, 'endsWith');
+  return descriptor && !descriptor.writable;
+}();
+
+// `String.prototype.endsWith` method
+// https://tc39.es/ecma262/#sec-string.prototype.endswith
+$({ target: 'String', proto: true, forced: !MDN_POLYFILL_BUG && !CORRECT_IS_REGEXP_LOGIC }, {
+  endsWith: function endsWith(searchString /* , endPosition = @length */) {
+    var that = toString(requireObjectCoercible(this));
+    notARegExp(searchString);
+    var endPosition = arguments.length > 1 ? arguments[1] : undefined;
+    var len = that.length;
+    var end = endPosition === undefined ? len : min(toLength(endPosition), len);
+    var search = toString(searchString);
+    return slice(that, end - search.length, end) === search;
+  }
+});
+
+
+/***/ }),
+
+/***/ 79:
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+var TO_STRING_TAG_SUPPORT = __webpack_require__(80);
+var isCallable = __webpack_require__(15);
+var classofRaw = __webpack_require__(13);
+var wellKnownSymbol = __webpack_require__(40);
+
+var TO_STRING_TAG = wellKnownSymbol('toStringTag');
+var $Object = Object;
+
+// ES3 wrong here
+var CORRECT_ARGUMENTS = classofRaw(function () { return arguments; }()) === 'Arguments';
+
+// fallback for IE11 Script Access Denied error
+var tryGet = function (it, key) {
+  try {
+    return it[key];
+  } catch (error) { /* empty */ }
+};
+
+// getting tag from ES6+ `Object.prototype.toString`
+module.exports = TO_STRING_TAG_SUPPORT ? classofRaw : function (it) {
+  var O, tag, result;
+  return it === undefined ? 'Undefined' : it === null ? 'Null'
+    // @@toStringTag case
+    : typeof (tag = tryGet(O = $Object(it), TO_STRING_TAG)) == 'string' ? tag
+    // builtinTag case
+    : CORRECT_ARGUMENTS ? classofRaw(O)
+    // ES3 arguments fallback
+    : (result = classofRaw(O)) === 'Object' && isCallable(O.callee) ? 'Arguments' : result;
+};
+
+
+/***/ }),
+
 /***/ 8:
 /***/ (function(module, exports) {
 
@@ -12385,6 +12657,43 @@ try {
 // easier to handle this case. if(!global) { ...}
 
 module.exports = g;
+
+
+/***/ }),
+
+/***/ 80:
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+var wellKnownSymbol = __webpack_require__(40);
+
+var TO_STRING_TAG = wellKnownSymbol('toStringTag');
+var test = {};
+
+test[TO_STRING_TAG] = 'z';
+
+module.exports = String(test) === '[object z]';
+
+
+/***/ }),
+
+/***/ 83:
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+var global = __webpack_require__(7);
+var path = __webpack_require__(30);
+
+module.exports = function (CONSTRUCTOR, METHOD) {
+  var Namespace = path[CONSTRUCTOR + 'Prototype'];
+  var pureMethod = Namespace && Namespace[METHOD];
+  if (pureMethod) return pureMethod;
+  var NativeConstructor = global[CONSTRUCTOR];
+  var NativePrototype = NativeConstructor && NativeConstructor.prototype;
+  return NativePrototype && NativePrototype[METHOD];
+};
 
 
 /***/ }),
