@@ -40,6 +40,7 @@ from perma.forms import (
     UserForm,
     UserFormWithAdmin,
     UserFormWithOrganization,
+    MultipleUsersFormWithOrganization,
     UserFormWithRegistrar,
     UserFormWithSponsoringRegistrar,
 )
@@ -544,6 +545,7 @@ def list_users_in_group(request, group_name):
         'single_user_url':f'user_management_manage_single_{group_name}',
         'delete_user_url':f'user_management_manage_single_{group_name}_delete',
         'add_user_url':f'user_management_{group_name}_add_user',
+        'add_multiple_users_url':f'user_management_{group_name}_add_multiple_users',
 
         'sort': sort,
         'search_query': search_query,
@@ -635,7 +637,7 @@ def list_sponsored_users(
         'single_user_url':f'user_management_manage_single_{group_name}',
         'delete_user_url':f'user_management_manage_single_{group_name}_delete',
         'add_user_url':f'user_management_{group_name}_add_user',
-
+        'add_multiple_users_url':f'user_management_{group_name}_add_multiple_users',
         'sort': sort,
         'search_query': search_query,
         'registrar_filter': registrar_filter,
@@ -700,7 +702,8 @@ class BaseAddUserToGroup(UpdateView):
         Base class for views that take an email address and either add a new user, or add the user to
         a given group if they already exist.
     """
-
+    is_batch = False
+    
     def __init__(self, **kwargs):
         super(BaseAddUserToGroup, self).__init__(**kwargs)
         self.extra_context = {}
@@ -749,26 +752,45 @@ class BaseAddUserToGroup(UpdateView):
     def form_valid(self, form):
         """ If form is submitted successfully, show success message and send email to target user. """
         response = super(BaseAddUserToGroup, self).form_valid(form)
-        if self.is_new:
-            email_new_user(
-                self.request,
-                self.object,
-                self.user_added_email_template,
-                { 'form': form }
-            )
-            messages.add_message(self.request, messages.SUCCESS,
-                                 f'<h4>Account created!</h4> <strong>{self.object.email}</strong> will receive an email with instructions on how to activate the account and create a password.',
-                                 extra_tags='safe')
+        
+        if not self.is_batch:
+            if self.is_new:
+                email_new_user(
+                    self.request,
+                    self.object,
+                    self.user_added_email_template,
+                    { 'form': form }
+                )
+                messages.add_message(self.request, messages.SUCCESS,
+                                    f'<h4>Account created!</h4> <strong>{self.object.email}</strong> will receive an email with instructions on how to activate the account and create a password.',
+                                    extra_tags='safe')
+            else:
+                send_user_email(
+                    self.object.raw_email,
+                    self.confirmation_email_template,
+                    { 'account_settings_page': f"https://{self.request.get_host()}{reverse('settings_profile')}",
+                    'form': form }
+                )
+                messages.add_message(self.request, messages.SUCCESS,
+                                    f'<h4>Success!</h4> <strong>{self.object.email}</strong> added.',
+                                    extra_tags='safe')
         else:
-            send_user_email(
-                self.object.raw_email,
-                self.confirmation_email_template,
-                { 'account_settings_page': f"https://{self.request.get_host()}{reverse('settings_profile')}",
-                  'form': form }
-            )
-            messages.add_message(self.request, messages.SUCCESS,
-                                 f'<h4>Success!</h4> <strong>{self.object.email}</strong> added.',
-                                 extra_tags='safe')
+            if form.created_users:
+                for user in form.created_users:
+                    email_new_user(self.request, user, self.user_added_email_template, { 'form': form })
+            if form.updated_users:
+                for user in form.updated_users:
+                    send_user_email(user.raw_email, self.confirmation_email_template, { 'form': form })
+
+            if form.batch_validation_errors:
+                messages.add_message(self.request, messages.ERROR,
+                                     f'<h4>Error!</h4>{"<br>".join(form.batch_validation_errors)}', extra_tags='safe')
+            else: 
+                messages.add_message(self.request, messages.SUCCESS,
+                                     f'<h4>Success!</h4>New users will receive an email with instructions on '
+                                     f'how to activate their accounts and create a password.<br>'
+                                     f'Existing users will receive an email notifying them '
+                                     f'about their updated organization affiliation.', extra_tags='safe')
 
         return response
 
@@ -795,6 +817,25 @@ class AddUserToOrganization(RequireOrgOrRegOrAdminUser, BaseAddUserToGroup):
             return False, f"{self.object} is an admin user and cannot be added to individual organizations."
         if self.object.is_registrar_user():
             return False, f"{self.object} is already a registrar user and cannot be added to individual organizations."
+        return True, ""
+
+
+class AddMultipleUsersToOrganization(RequireOrgOrRegOrAdminUser, BaseAddUserToGroup):
+    template_name = 'user_management/add_multiple_users_to_org.html'
+    success_url = reverse_lazy('user_management_manage_organization_user')
+    confirmation_email_template = 'email/user_added_to_organization.txt'
+    user_added_email_template = 'email/new_user_added_to_org_by_other.txt'
+    new_user_form = MultipleUsersFormWithOrganization
+    is_batch = True
+
+    def get_form_kwargs(self):
+        """ Filter organizations to those current user can access. """
+        return dict(
+            super(AddMultipleUsersToOrganization, self).get_form_kwargs(),
+            request=self.request)
+
+    def target_user_valid(self):
+        """ Defaulting to True since we don't need to validate the users on form render for batch upload flow. """
         return True, ""
 
 

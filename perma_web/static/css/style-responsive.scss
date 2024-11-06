@@ -2366,7 +2366,7 @@ figcaption + .img-responsive {
   border-color: transparent;
 }
 
-.alert-success, .alert-info {
+.alert-success, .alert-info, .alert-error {
   color: $color-green;
   background-color: $color-white;
   border: 2px solid $color-green;
@@ -2399,8 +2399,16 @@ figcaption + .img-responsive {
   }
 }
 
+.alert-error {
+  color: $color-error-a;
+  border: 2px solid $color-error-a;
+  h4 {
+    color: $color-error-a;
+  }
+}
+
 .alert-block {
-  margin: $double 0 $grid * 4;
+  margin: $grid * 6 0 $grid * 4;
 }
 
 .close-browser-tools {
@@ -4487,6 +4495,20 @@ span.action, a.action-heading {
   right: 0;
 }
 
+.bulk-users {
+  position: absolute;
+  top: 50px;
+  right: 22px;
+  font-size: 16px;
+  font-weight: 200;
+}
+
+.bulk-users a {
+  color: #2D76EE;
+  text-decoration: underline;
+  font-weight: normal;
+}
+
 .org-settings {
   margin-top: $double;
 }
@@ -4523,21 +4545,22 @@ span.action, a.action-heading {
     margin-left: 5px;
   }
   .button-wrapper {
-    display:inline-block;
-    float:right;
+    display: inline-block;
+    float: right;
   }
 }
 
 #add-member {
   padding-bottom: 0;
+  margin-top: 50px;
 }
 
 .admin-data {
-  margin: $grid * 3 0 0;
+  margin: $grid * 6 0 0;
   border-top: 1px solid $color-blue;
   padding-top: 1px;
   @include respond-tablet  {
-    margin: $grid * 3 0;
+    margin: $grid * 6 0;
   }
 }
 

@@ -1,6 +1,8 @@
 from axes.utils import reset as reset_login_attempts
 import string
 import secrets
+import csv
+from io import TextIOWrapper
 
 from django import forms
 from django.conf import settings
@@ -368,6 +370,115 @@ class UserFormWithOrganization(UserForm):
             )
 
         return instance
+
+
+class MultipleUsersFormWithOrganization(ModelForm):
+    """
+    Create multiple organization users via CSV file
+    """
+    organizations = forms.ModelChoiceField(label='Organization', queryset=Organization.objects.order_by('name'))
+    indefinite_affiliation = forms.BooleanField(
+        label="Permanent affiliation",
+        required=False,
+        initial=True
+    )
+    expires_at = forms.DateTimeField(
+        label="Affiliation expiration date",
+        widget=forms.DateTimeInput(attrs={"type": "date"}),
+        required=False
+    )
+    csv_file = forms.FileField(label='User information',
+                               help_text=mark_safe("<br>* Please enter first names under <strong>first_name</strong> "
+                                                   "column, last names under <strong>last_name</strong> column and"
+                                                   " email addresses under <strong>email</strong> column. <br><br>"
+                                                   "If there is already a Perma.cc account associated with an "
+                                                   "email, we will add an Organization affiliation. If there is not, "
+                                                   "an account will be created and automatically affiliated with this "
+                                                   "Organization."))
+
+    def __init__(self, request, data=None, files=None, **kwargs):
+        super(MultipleUsersFormWithOrganization, self).__init__(data, files, **kwargs)
+        self.request = request
+        self.created_users = []
+        self.updated_users = []
+        self.batch_validation_errors = []
+
+        # Filter available organizations based on the current user
+        query = self.fields['organizations'].queryset
+        if request.user.is_registrar_user():
+            query = query.filter(registrar_id=request.user.registrar_id)
+        elif request.user.is_organization_user:
+            query = query.filter(users=request.user.pk)
+        self.fields['organizations'].queryset = query
+
+    class Meta:
+        model = LinkUser
+        fields = ["organizations", "indefinite_affiliation", "expires_at", "csv_file"]
+
+    def clean_csv_file(self):
+        file = self.cleaned_data['csv_file']
+
+        if not file.name.endswith('.csv'):
+            raise forms.ValidationError("The file must be a CSV.")
+
+        file = TextIOWrapper(file, encoding='utf-8')
+        reader = csv.DictReader(file)
+
+        for line in reader:
+            first_name = line.get('first_name')
+            last_name = line.get('last_name')
+            email = line.get('email')
+
+            if not first_name or not last_name or not email:
+                raise forms.ValidationError("Each row in the CSV file must contain first_name, last_name, and email.")
+
+        file.seek(0)
+        self.cleaned_data['csv_file'] = file
+        return file
+
+    def save(self, commit=True):
+        csv_file = self.cleaned_data['csv_file']
+        expires_at = self.cleaned_data['expires_at']
+        reader = csv.DictReader(csv_file)
+
+        for line in reader:
+            first_name = line.get('first_name')
+            last_name = line.get('last_name')
+            email = line.get('email')
+
+            user, created = LinkUser.objects.get_or_create(
+                email=email.strip(),
+                defaults={
+                    'first_name': first_name.strip(),
+                    'last_name': last_name.strip()
+                }
+            )
+
+            if commit:
+                if created:
+                    user.save()
+                    UserOrganizationAffiliation.objects.create(
+                        user=user,
+                        organization=self.cleaned_data['organizations'],
+                        expires_at=expires_at
+                    )
+                    self.created_users.append(user)
+                else:
+                    if user.is_staff:
+                        self.batch_validation_errors.append(f"{user.raw_email} is an admin user and "
+                                                 f"cannot be added to individual organizations.")
+                    elif user.is_registrar_user():
+                        self.batch_validation_errors.append(f"{user.raw_email} is already a registrar user and "
+                                                 f"cannot be added to individual organizations.")
+                    else:
+                        UserOrganizationAffiliation.objects.update_or_create(
+                            user=user,
+                            organization=self.cleaned_data['organizations'],
+                            defaults={'expires_at': expires_at}
+                        )
+                        self.updated_users.append(user)
+
+        return self
 
 
 ### USER EDIT FORMS ###

@@ -7,7 +7,7 @@ from django.contrib.auth import views as auth_views
 from django.urls import re_path
 from django.views.generic import RedirectView
 
-from perma.views.user_management import AddUserToOrganization, AddUserToRegistrar, AddSponsoredUserToRegistrar, AddUserToAdmin, AddRegularUser
+from perma.views.user_management import AddUserToOrganization, AddMultipleUsersToOrganization, AddUserToRegistrar, AddSponsoredUserToRegistrar, AddUserToAdmin, AddRegularUser
 from .views.common import DirectTemplateView
 from .views import (
     admin_stats,
@@ -141,6 +141,7 @@ urlpatterns = [
 
     re_path(r'^manage/organization-users/?$', user_management.manage_organization_user, name='user_management_manage_organization_user'),
     re_path(r'^manage/organization-users/add-user/?$', AddUserToOrganization.as_view(), name='user_management_organization_user_add_user'),
+    re_path(r'^manage/organization-users/add-multiple-users/?$', AddMultipleUsersToOrganization.as_view(), name='user_management_organization_user_add_multiple_users'),
     re_path(r'^manage/organization-users/(?P<user_id>\d+)/?$', user_management.manage_single_organization_user, name='user_management_manage_single_organization_user'),
     re_path(r'^manage/organization-users/(?P<user_id>\d+)/delete/?$', user_management.manage_single_organization_user_delete, name='user_management_manage_single_organization_user_delete'),
     re_path(r'^manage/organization-users/(?P<user_id>\d+)/reactivate/?$', user_management.manage_single_organization_user_reactivate, name='user_management_manage_single_organization_user_reactivate'),

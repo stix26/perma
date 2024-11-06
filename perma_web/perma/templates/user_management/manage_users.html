@@ -8,6 +8,9 @@
 
   <a class="action-heading" data-toggle="collapse" href="#add-member" aria-expanded="false" aria-controls="#add-member"><i class="icon-plus-sign" aria-hidden="true"></i> add<span class="_verbose"> {{ pretty_group_name|lower }}</span></a>
 
+  {% if group_name == 'organization_user' %}
+    <p class="bulk-users">or <a href="{% url 'user_management_organization_user_add_multiple_users' %}">add multiple users</a></p>
+  {% endif %}
   {% if messages %}
     {% for message in messages %}
       <div class="alert-{{ message.level_tag }} alert-block" >{% if 'safe' in message.tags %}{{ message|safe }}{% else %}{{ message }}{% endif %}</div>
