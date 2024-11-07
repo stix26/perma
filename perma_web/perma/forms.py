@@ -411,10 +411,9 @@ class MultipleUsersFormWithOrganization(ModelForm):
         widget=forms.DateTimeInput(attrs={"type": "date"}),
         required=False
     )
-    csv_file = forms.FileField(label='User information',
-                               help_text=mark_safe("<br>* Please enter first names under <strong>first_name</strong> "
-                                                   "column, last names under <strong>last_name</strong> column and"
-                                                   " email addresses under <strong>email</strong> column. <br><br>"
+    csv_file = forms.FileField(label='* User information',
+                               help_text=mark_safe("<br>* When creating your CSV, please include the following fields: first_name, last_name, email. "
+                                                   "First and last name columns may be left blank.<br><br>"
                                                    "If there is already a Perma.cc account associated with an "
                                                    "email, we will add an Organization affiliation. If there is not, "
                                                    "an account will be created and automatically affiliated with this "
@@ -449,12 +448,10 @@ class MultipleUsersFormWithOrganization(ModelForm):
         reader = csv.DictReader(file)
 
         for line in reader:
-            first_name = line.get('first_name')
-            last_name = line.get('last_name')
             email = line.get('email')
 
-            if not first_name or not last_name or not email:
-                raise forms.ValidationError("Each row in the CSV file must contain first_name, last_name, and email.")
+            if not email:
+                raise forms.ValidationError("Each row in the CSV file must contain email.")
 
         file.seek(0)
         self.cleaned_data['csv_file'] = file
