@@ -786,11 +786,7 @@ class BaseAddUserToGroup(UpdateView):
                 messages.add_message(self.request, messages.ERROR,
                                      f'<h4>Error!</h4>{"<br>".join(form.batch_validation_errors)}', extra_tags='safe')
             else: 
-                messages.add_message(self.request, messages.SUCCESS,
-                                     f'<h4>Success!</h4>New users will receive an email with instructions on '
-                                     f'how to activate their accounts and create a password.<br>'
-                                     f'Existing users will receive an email notifying them '
-                                     f'about their updated organization affiliation.', extra_tags='safe')
+                messages.add_message(self.request, messages.SUCCESS, '<h4>Success!</h4>New users will receive an email with instructions on how to activate their accounts and create a password.<br>Existing users will receive an email notifying them about their updated organization affiliation.', extra_tags='safe')
 
         return response
 
