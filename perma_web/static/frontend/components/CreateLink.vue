@@ -25,6 +25,7 @@ let progressInterval;
 const resetForm = () => {
   captureStatus.value = 'ready'
   captureErrorMessage.value = ''
+  captureGUID.value = ''
   userLink.value = ''
   userLinkProgressBar.value = '0%'
   clearInterval(progressInterval)
@@ -108,8 +109,9 @@ const handleProgressUpdate = async () => {
   }
 
   if (status === 'completed') {
-    resetForm()
-    window.location.href = `${window.location.origin}/${captureGUID.value}`
+    const url = `${window.location.origin}/${captureGUID.value}`;
+    resetForm();
+    window.location.href = url;
   }
 
   if (status === 'failed') {
@@ -188,9 +190,9 @@ defineExpose({
               :captureGUID="captureGUID"
           />
           <LinkCount v-if="globalStore.userTypes.includes('individual')"/>
-          <div v-if="!globalStore.userTypes.includes('individual')" style="display: flex; align-items: center;">
-            <span class="label-affil" style="flex-shrink: 0; margin-right: 14px;">This Perma Link will be affiliated with</span>
-            <FolderSelect style="flex-grow: 1"/>
+          <div v-if="!globalStore.userTypes.includes('individual')" id="organization_select_wrapper">
+            <div class="label-affil">This Perma Link will be affiliated with</div>
+            <FolderSelect/>
           </div>
         </fieldset>
         <p v-if="!isToolsReminderSuppressed" id="browser-tools-message" class="u-pb-150"

@@ -1,13 +1,12 @@
 <script setup>
-import { ref, watch, computed } from 'vue'
+import { ref } from 'vue'
 import TextInput from './forms/TextInput.vue';
 import Dialog from './Dialog.vue'
 import { useGlobalStore } from '../stores/globalStore'
-import { getErrorFromStatus, defaultError } from '../lib/errors'
 import { fetchDataOrError } from '../lib/data'
 import Spinner from './Spinner.vue'
 import FileInput from './forms/FileInput.vue';
-
+import { getErrorMessages } from '../lib/errors'
 const props = defineProps({
   captureGUID: {
     type: String,
@@ -19,7 +18,7 @@ const globalStore = useGlobalStore()
 
 const captureStatus = ref('ready')
 const errors = ref({})
-const globalErrors = ref()
+const globalError = ref()
 const title = ref('')
 const description = ref('')
 const url = ref('')
@@ -56,9 +55,6 @@ const handleUploadRequest = async () => {
     errors.value.file = ['File is required']
   }
   if (!props.captureGUID) {
-    if (!title.value) {
-      errors.value.title = ['Title is required']
-    }
     if (!url.value) {
       errors.value.url = ['URL is required']
     }
@@ -72,9 +68,9 @@ const handleUploadRequest = async () => {
   const formDataObj = new FormData();
   formDataObj.append('folder', globalStore.selectedFolder.folderId);
   formDataObj.append('file', file.value);
+  formDataObj.append('title', title.value);
+  formDataObj.append('description', description.value);
   if (!props.captureGUID) {
-    formDataObj.append('title', title.value);
-    formDataObj.append('description', description.value);
     formDataObj.append('url', url.value);
   }
 
@@ -88,12 +84,8 @@ const handleUploadRequest = async () => {
 
   // error handling
   if (error) {
-    console.log(error, response)
-    if (data) {
-      errors.value = data
-    } else {
-      globalErrors.value = response.status ? getErrorFromStatus(response.status) : defaultError
-    }
+    captureStatus.value = "ready";
+    ({formErrors: errors.value, globalError: globalError.value} = getErrorMessages(error, data, response, formDataObj.keys()));
     return;
   }
 
@@ -123,7 +115,7 @@ defineExpose({
         </h3>
       </div>
       <p v-if="props.captureGUID" class="modal-description">
-        This will update the Perma Link you have created.
+        This will update the Perma Link you were trying to create.
       </p>
       <p v-else class="modal-description">
         This will create a new Perma Link.
@@ -135,7 +127,6 @@ defineExpose({
         </div>
 
         <form id="archive_upload_form" @submit.prevent>
-          <template v-if="!props.captureGUID">
             <TextInput
                 v-model="title"
                 name="New Perma Link title"
@@ -152,6 +143,7 @@ defineExpose({
                 id="description"
                 :error="errors.description"
             />
+          <template v-if="!props.captureGUID">
             <TextInput
                 v-model="url"
                 name="New Perma Link URL"
@@ -179,8 +171,8 @@ defineExpose({
             <button type="button" @click.prevent="handleClose" class="btn cancel">Cancel</button>
           </div>
 
-          <p v-if="globalErrors" class="field-error">
-            Upload failed. {{ globalErrors }}
+          <p v-if="globalError" class="field-error">
+            Upload failed. {{ globalError }}
           </p>
 
         </form>

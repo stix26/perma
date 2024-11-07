@@ -1,5 +1,6 @@
 import { defineStore } from 'pinia'
 import { fetchDataOrError } from '../lib/data'
+import { sleep } from '../lib/helpers'
 
 export const useGlobalStore = defineStore('global', {
   state: () => ({
@@ -17,7 +18,6 @@ export const useGlobalStore = defineStore('global', {
       isReadOnly: false,
       isOutOfLinks: false,
     },
-    userOrganizations: [],
     sponsoredFolders: [],
     subscriptionStatus: '',
     maxSize: 0,
@@ -27,6 +27,9 @@ export const useGlobalStore = defineStore('global', {
       jstree: null,
       linkList: null,
     },
+    toasts: [],
+    urls: {},
+    currentUser: {},
   }),
   actions: {
     setLinksRemainingFromGlobals(linksRemaining, isNonpaying) {
@@ -53,14 +56,6 @@ export const useGlobalStore = defineStore('global', {
           this.userTypes = userTypes;
       }
 
-      if (this.userTypes.includes('orgAffiliated') || this.userTypes.includes('staff')) {
-        this.setFromAPI('userOrganizations', fetchDataOrError('/organizations', {
-          params: {
-            limit: 300,
-            order_by: 'registrar, name',
-          }
-        }))
-      }
       if (this.userTypes.includes('sponsored')) {
         this.setFromAPI('sponsoredFolders', fetchDataOrError(`/folders/${current_user.top_level_folders[1].id}/folders/`))
       }
@@ -73,6 +68,14 @@ export const useGlobalStore = defineStore('global', {
       }
 
       this[attribute] = data.objects
+    },
+    async addToast(message, level = 'success', duration = 3000) {
+      const toast = {id: Date.now(), message, level};
+      this.toasts.push(toast);
+      if (duration) {
+        await sleep(duration);
+        this.toasts = this.toasts.filter(t => t.id !== toast.id);
+      }
     },
   },
 })

@@ -28,7 +28,7 @@ from django.contrib.postgres.fields import ArrayField, DateTimeRangeField
 from django.conf import settings
 from django.core.files.storage import storages
 from django.db import models, transaction
-from django.db.models import Q, Max, Count, Sum, JSONField, F, Exists, OuterRef
+from django.db.models import Q, Max, Count, Sum, JSONField, F, Exists, OuterRef, When, Case
 from django.db.models.functions import Now, Upper, TruncDate
 from django.db.models.query import QuerySet
 from django.contrib.postgres.indexes import GistIndex, GinIndex, OpClass
@@ -908,11 +908,24 @@ class LinkUser(CustomerModel, AbstractBaseUser, PermissionsMixin):
     def top_level_folders(self):
         """
             Get top level folders for this user, including personal folder, sponsored folder, and shared folders.
+            Returns a queryset of Folders, with personal/sponsored folders first, followed by org folders sorted by name.
         """
-        folders = [self.root_folder]
-        if self.sponsored_root_folder:
-            folders.append(self.sponsored_root_folder)
-        return folders + [org.shared_folder for org in self.get_orgs().select_related('shared_folder').order_by('name') if org]
+        # personal folder first, custom_order = 0
+        folder_ids = [self.root_folder_id]
+        ordering_cases = [When(id=self.root_folder_id, then=0)]
+
+        # sponsored folder second, custom_order = 1
+        if self.sponsored_root_folder_id:
+            folder_ids.append(self.sponsored_root_folder_id)
+            ordering_cases.append(When(id=self.root_folder_id, then=1))
+
+        # then org folders if any, custom_order = 2
+        return Folder.objects.filter(
+            Q(id__in=folder_ids) |
+            Q(id__in=self.get_orgs().values('shared_folder_id'))
+        ).annotate(
+            custom_order=Case(*ordering_cases, default=2)
+        ).order_by('custom_order', 'name')
 
     def all_folder_trees(self):
         """
@@ -1683,7 +1696,8 @@ class Link(DeletableModel):
         indexes = [
             models.Index(fields=['user_deleted', 'is_private', 'is_unlisted', 'cached_can_play_back', 'internet_archive_upload_status']),
             models.Index('user_deleted', TruncDate('creation_timestamp'), 'is_private', 'is_unlisted', 'cached_can_play_back', name="ia_eligible_for_date_idx"),
-            models.Index(fields=['creation_timestamp']),
+            models.Index(fields=['creation_timestamp', 'guid']),
+            models.Index(fields=['-creation_timestamp', 'guid']),
             models.Index(fields=['submitted_url_surt']),
             GinIndex(OpClass(Upper('guid'), name='gin_trgm_ops'), name='guid_case_insensitive_idx'),
         ]
@@ -2171,6 +2185,11 @@ class CaptureJob(models.Model):
 
     def __str__(self):
         return f"CaptureJob {self.pk}: {self.link_id}"
+
+    class Meta:
+        indexes = [
+            models.Index(fields=['capture_start_time']),
+        ]
 
     def save(self, *args, **kwargs):
 

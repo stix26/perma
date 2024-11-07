@@ -91,7 +91,7 @@ WACZ_STORAGE = 'secondary'
 WACZ_STORAGE_DIR = 'waczs'
 WACZ_PRESIGNED_URL_EXPIRES = 15 * 60
 
-ARCHIVE_FORMATS = ['warc']
+ARCHIVE_FORMATS = ['warc', 'wacz']
 
 WARC_TO_WACZ_ON_DEMAND = False
 WARC_TO_WACZ_ON_DEMAND_SIZE_LIMIT = 1024 * 1024 * 100 # 100 MB
@@ -614,8 +614,8 @@ USE_ANALYTICS_VIEWS = [
     'dev_docs',
     'sign_up',
     'sign_up_courts',
-    'sign_up_firm',
-    'libraries'
+    'sign_up_firms',
+    'sign_up_libraries'
 ]
 
 # If USE_SENTRY is True, SENTRY_DSN must be set

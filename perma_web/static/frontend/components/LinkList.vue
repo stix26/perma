@@ -4,13 +4,11 @@ import { useGlobalStore } from '../stores/globalStore';
 import { storeToRefs } from 'pinia';
 import { fetchDataOrError } from '../lib/data'
 import { useInfiniteScroll } from '@vueuse/core'
-import { useToast } from '../lib/notifications'
 import Spinner from './Spinner.vue'
 
 /*** Component setup ***/
 const globalStore = useGlobalStore();
 const { selectedFolder } = storeToRefs(globalStore);
-const { addToast } = useToast();
 
 /*** Variables ***/
 const searchQuery = ref('');
@@ -30,20 +28,28 @@ const linkScrollContainer = ref(null);
 
 /*** Methods ***/
 const fetchLinks = async (append = false) => {
-  if (!folder.value) {
+  const folderId = selectedFolder.value?.folderId;
+  if (!folderId) {
     return;
   }
   loading.value = true;
-  const { data, error } = await fetchDataOrError(`/folders/${folder.value}/archives/`, {
+  if (!append) {
+    resetPagination();
+  }
+  const { data, error } = await fetchDataOrError(`/folders/${folderId}/archives/`, {
     params: {
       q: query.value,
       limit: limit.value,
       offset: offset.value
     }
   });
+  if (selectedFolder.value.folderId !== folderId) {
+    // folder changed while we were fetching
+    return;
+  }
   loading.value = false;
   if (error) {
-    addToast({message: 'Error fetching data. Please try again.', status: 'error'});
+    globalStore.addToast('Error fetching data. Please try again.', 'error');
     return;
   }
   const newLinks = data.objects.map(link => ({
@@ -74,8 +80,8 @@ const generateLinkFields = (link, query) => {
   // mark the capture as pending if either the primary or the screenshot capture are pending
   // mark the capture as failed if both the primary and the screenshot capture failed.
   // (ignore the favicon capture)
-  let primary_failed = false;
-  let screenshot_failed = false;
+  let primary_failed = true;
+  let screenshot_failed = true;
   let primary_pending = false;
   let screenshot_pending = false;
   link.favicon_url = '';
@@ -83,14 +89,14 @@ const generateLinkFields = (link, query) => {
     if (c.role==="primary"){
       if (c.status==="pending"){
         primary_pending = true;
-      } else if (c.status==="failed"){
-        primary_failed = true;
+      } else if (c.status==="success"){
+        primary_failed = false;
       }
     } else if (c.role==="screenshot"){
       if (c.status==="pending"){
         screenshot_pending = true;
-      } else if (c.status==="failed"){
-        screenshot_failed = true;
+      } else if (c.status==="success"){
+        screenshot_failed = false;
       }
     } else if (c.role==="favicon" && c.status==="success"){
       link.favicon_url = c.playback_url;
@@ -99,7 +105,7 @@ const generateLinkFields = (link, query) => {
   if (primary_pending || screenshot_pending){
     link.is_pending = true;
   }
-  if (primary_failed && screenshot_failed){
+  if (!link.is_pending && primary_failed && screenshot_failed){
     link.is_failed = true;
   }
   return link;
@@ -165,10 +171,11 @@ const toggleLinkDetails = async (e, link, focusSelector) => {
     folderOptions.value = options;
   }
 
+  if (focusSelector){
   // focus handling: if using .toggle-details button, focus stays on the button
-  // if clicking on the row, focus moves to the first input field
-  await nextTick()
-  itemContainer.querySelector(focusSelector)?.focus()
+    await nextTick()
+    itemContainer.querySelector(focusSelector)?.focus()
+  }
 }
 
 const moveLink = async (folderID, guid) => {
@@ -176,7 +183,7 @@ const moveLink = async (folderID, guid) => {
     method: 'PUT',
   });
   if (error) {
-    addToast({message: 'Error fetching data. Please try again.', status: 'error'});
+    globalStore.addToast('Error fetching data. Please try again.', 'error');
     return;
   }
   globalStore.linksRemaining = data.links_remaining;
@@ -218,7 +225,6 @@ const handleInput = async (guid, field, value) => {
 
     if (error) {
       saveStatuses.value[statusKey] = 'Error saving';
-      addToast({message: 'Error fetching data. Please try again.', status: 'error'});
       return;
     }
 
@@ -267,7 +273,7 @@ function handleMouseUp (e, link) {
   if(dragStartPosition && Math.sqrt(Math.pow(e.pageX-dragStartPosition[0], 2)*Math.pow(e.pageY-dragStartPosition[1], 2))>5)
     return;
 
-  toggleLinkDetails(e, link, `#link-title-${link.guid}`);
+  toggleLinkDetails(e, link);
 }
 
 /*** Infinite scroll setup ***/
@@ -335,17 +341,11 @@ defineExpose({
       <a href="#" class="clear-search" @click.prevent="clearSearch">Clear search.</a>
     </div>
 
-
-    <template v-if="!selectedFolder.folderId">
-      <div class="item-notification">No folder selected</div>
-    </template>
-
-    <template v-else-if="loading">
-      <div class="item-notification"><Spinner /></div>
-    </template>
+    <div v-if="!selectedFolder.folderId" class="item-notification">No folder selected</div>
 
     <template v-else-if="!links.length">
-      <div class="item-notification">This is an empty folder</div>
+      <div v-if="loading" class="item-notification"><Spinner /></div>
+      <div v-else class="item-notification">This is an empty folder</div>
     </template>
     
     <template v-else>
@@ -502,6 +502,7 @@ defineExpose({
           </div>
         </div>
       </div>
+      <div v-if="loading" class="item-notification"><Spinner /></div>
     </template>
   </div>
 </template>
