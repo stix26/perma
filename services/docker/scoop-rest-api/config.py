@@ -1,5 +1,5 @@
-# This is the default config.py from the Scoop REST API as of 7/19/2024
-# https://github.com/harvard-lil/perma-scoop-api/blob/ac4691f4716ac1481dcecdc87c2b2302406aa3c3/scoop_rest_api/config.py
+# This is the default config.py from the Scoop REST API as of 11/12/2024
+# https://github.com/harvard-lil/perma-scoop-api/blob/main/scoop_rest_api/config.py
 # We use it to:
 # - override the blocklist, to allow the capturing of docker-hosted pages in our test suite;
 # - enable additional attachments
@@ -150,7 +150,7 @@ SCOOP_CLI_OPTIONS = {
     - utils.config_check.EXCLUDED_SCOOP_CLI_OPTIONS
 """
 
-SCOOP_TIMEOUT_FUSE = 90
+SCOOP_TIMEOUT_FUSE = 60
 """ Number of seconds to wait before "killing" a Scoop progress after capture timeout. """
 
 
