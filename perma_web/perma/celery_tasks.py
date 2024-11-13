@@ -677,8 +677,8 @@ def upload_link_to_internet_archive(link_guid, attempts=0, timeouts=0):
             # copy warc to local disk storage for upload.
             # (potentially not necessary, but we think more robust against network conditions
             # https://github.com/harvard-lil/perma/commit/25eb14ce634675ffe67d0f14f51308f1202b53ea)
-            with storages[settings.WARC_STORAGE].open(link.warc_storage_file()) as warc_file:
-                logger.info(f"Downloading {link.warc_storage_file()} from S3.")
+            with link.get_warc() as warc_file:
+                logger.info(f"Downloading archive from S3.")
                 copy_file_data(warc_file, temp_warc_file)
                 temp_warc_file.seek(0)
 
