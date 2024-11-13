@@ -1,16 +1,17 @@
-from glob import glob
-
-import os
 import dateutil.parser
+from io import StringIO
+from glob import glob
+import os
+import re
+from requests.exceptions import RequestException
+from requests import request as orig_request
+
 from django.conf import settings
 from django.core.files.storage import storages
 from django.urls import reverse
 from django.http import StreamingHttpResponse
 from django.test.utils import override_settings
-from io import StringIO
-import re
-from requests.exceptions import RequestException
-from requests import request as orig_request
+
 from mock import patch
 import pytest
 
