@@ -678,7 +678,7 @@ def upload_link_to_internet_archive(link_guid, attempts=0, timeouts=0):
             # (potentially not necessary, but we think more robust against network conditions
             # https://github.com/harvard-lil/perma/commit/25eb14ce634675ffe67d0f14f51308f1202b53ea)
             with link.get_warc() as warc_file:
-                logger.info(f"Downloading archive from S3.")
+                logger.info("Downloading archive from S3.")
                 copy_file_data(warc_file, temp_warc_file)
                 temp_warc_file.seek(0)
 

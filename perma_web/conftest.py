@@ -958,18 +958,17 @@ def complete_link_with_warc(complete_link_factory):
     })
 
     with open(
-            os.path.join(
-                settings.PROJECT_ROOT,
-                'perma/tests/assets/new_style_archive/archive.warc.gz'
-            ),
-            'rb'
-        ) as warc_file:
+        os.path.join(
+            settings.PROJECT_ROOT, "perma/tests/assets/new_style_archive/archive.warc.gz"
+        ),
+        "rb",
+    ) as warc_file:
 
-            storages[settings.WARC_STORAGE].store_file(
-                warc_file, link.warc_storage_file(), overwrite=True
-            )
-            link.warc_size = warc_file.tell()
-            link.save()
+        storages[settings.WARC_STORAGE].store_file(
+            warc_file, link.warc_storage_file(), overwrite=True
+        )
+        link.warc_size = warc_file.tell()
+        link.save()
 
     return link
 
