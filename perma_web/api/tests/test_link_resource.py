@@ -96,7 +96,7 @@ class LinkResourceTestMixin():
     def assertRecordsInWarc(self, link, upload=False, expected_records=None, check_screenshot=False, check_provenance_summary=False):
 
         def find_recording_in_warc(index, capture_url, content_type):
-            warc_content_type = f"application/http;{ '' if settings.CAPTURE_ENGINE == 'perma' else ' '}msgtype=response"
+            warc_content_type = "application/http; msgtype=response"
             return next(
                 (entry for entry in index if
                     entry['content-type'] == warc_content_type and
@@ -141,10 +141,7 @@ class LinkResourceTestMixin():
         if check_screenshot:
             self.assertEqual(link.screenshot_capture.status, 'success')
             self.assertTrue(link.screenshot_capture.content_type, "Capture is missing a content type.")
-            if settings.CAPTURE_ENGINE == 'perma':
-                self.assertTrue(find_file_in_warc(index, link.screenshot_capture.url, link.screenshot_capture.content_type))
-            else:
-                self.assertTrue(find_attachment_in_warc(index, link.screenshot_capture.url))
+            self.assertTrue(find_attachment_in_warc(index, link.screenshot_capture.url))
 
         # repeat for the provenance summary
         if check_provenance_summary:
@@ -404,21 +401,12 @@ class LinkResourceTransactionTestCase(LinkResourceTestMixin, ApiResourceTransact
                                    user=self.org_user)
 
         link = Link.objects.get(guid=obj['guid'])
-        self.assertRecordsInWarc(link, check_screenshot=True, check_provenance_summary=(settings.CAPTURE_ENGINE == 'scoop-api'))
+        self.assertRecordsInWarc(link, check_screenshot=True, check_provenance_summary=True)
         self.assertTrue(link.primary_capture.content_type.startswith('text/html'))
-
-        if settings.CAPTURE_ENGINE == 'perma':
-            # test favicon captured via meta tag
-            self.assertIn("favicon_meta.ico", link.favicon_capture.url)
-
         self.assertFalse(link.is_private)
         self.assertEqual(link.submitted_title, "Test title.")
         self.assertEqual(link.submitted_description, "Test description.")
-        if settings.CAPTURE_ENGINE == 'perma':
-            software_pattern = '^perma$'
-        else:
-            software_pattern = r'scoop @ harvard library innovation lab: \d+\.\d+.\d+'
-        self.assertRegex(link.captured_by_software, software_pattern)
+        self.assertRegex(link.captured_by_software, r'scoop @ harvard library innovation lab: \d+\.\d+.\d+')
         expected_size = 15340
         self.assertLessEqual(abs(link.warc_size-expected_size), 100)
 
@@ -437,7 +425,7 @@ class LinkResourceTransactionTestCase(LinkResourceTestMixin, ApiResourceTransact
                                    user=self.org_user)
 
         link = Link.objects.get(guid=obj['guid'])
-        self.assertRecordsInWarc(link, check_provenance_summary=(settings.CAPTURE_ENGINE == 'scoop-api'))
+        self.assertRecordsInWarc(link, check_provenance_summary=True)
         self.assertEqual(link.primary_capture.content_type, 'application/pdf')
 
         # check folder
@@ -608,11 +596,6 @@ class LinkResourceTransactionTestCase(LinkResourceTestMixin, ApiResourceTransact
             ("test1.jpg", "image/jpeg"), ("test2.png", "image/png"),
             ("wide1.png", "image/png"), ("wide2.png", "image/png"), ("narrow.png", "image/png")
         ]
-        if settings.CAPTURE_ENGINE == 'perma':
-            expected_records = expected_records + [
-                ("test.swf", "application/vnd.adobe.flash.movie"), ("test2.swf", "application/vnd.adobe.flash.movie"), ("test3.swf", "application/vnd.adobe.flash.movie"),
-                ("test_fallback.jpg", "image/jpeg"),
-            ]
         link = Link.objects.get(guid=obj['guid'])
         self.assertRecordsInWarc(link, expected_records=expected_records)
 
