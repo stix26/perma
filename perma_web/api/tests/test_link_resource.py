@@ -96,7 +96,7 @@ class LinkResourceTestMixin():
     def assertRecordsInWarc(self, link, upload=False, expected_records=None, check_screenshot=False, check_provenance_summary=False):
 
         def find_recording_in_warc(index, capture_url, content_type):
-            warc_content_type = f"application/http; msgtype=response"
+            warc_content_type = "application/http; msgtype=response"
             return next(
                 (entry for entry in index if
                     entry['content-type'] == warc_content_type and
