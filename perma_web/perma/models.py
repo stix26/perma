@@ -2024,11 +2024,11 @@ class Link(DeletableModel):
         self.save(update_fields=['wacz_size'])
 
     @contextmanager
-    def get_warc(self, force_from_wacz_if_present=False):
-        if not self.warc_size and not force_from_wacz_if_present:
+    def get_warc(self, extract_from_wacz_if_present=True, force_from_wacz=False):
+        if not self.warc_size and not extract_from_wacz_if_present:
             raise RuntimeError(f'No WARC present for {self.guid}')
 
-        elif self.warc_size and not force_from_wacz_if_present:
+        elif self.warc_size and not force_from_wacz:
             yield storages[settings.WARC_STORAGE].open(self.warc_storage_file(), 'rb')
 
         elif self.wacz_size:
