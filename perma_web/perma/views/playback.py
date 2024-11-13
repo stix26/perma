@@ -143,11 +143,11 @@ def single_permalink(request, guid):
         if new_record:
             logger.debug(f"Ensuring warc for {link.guid} has finished uploading.")
             def assert_exists(filename):
-                assert storages[settings.WARC_STORAGE].exists(filename)
+                assert storages[settings.WACZ_STORAGE].exists(filename)
             try:
-                retry_on_exception(assert_exists, args=[link.warc_storage_file()], exception=AssertionError, attempts=settings.WARC_AVAILABLE_RETRIES)
+                retry_on_exception(assert_exists, args=[link.wacz_storage_file()], exception=AssertionError, attempts=settings.WACZ_AVAILABLE_RETRIES)
             except AssertionError:
-                logger.error(f"Made {settings.WARC_AVAILABLE_RETRIES} attempts to get {link.guid}'s warc; still not available.")
+                logger.error(f"Made {settings.WACZ_AVAILABLE_RETRIES} attempts to get {link.guid}'s wacz; still not available.")
                 # Let's consider this a HTTP 200, I think...
                 return render(request, 'archive/playback-delayed.html', context,  status=200)
 

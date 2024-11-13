@@ -91,7 +91,7 @@ WACZ_STORAGE = 'secondary'
 WACZ_STORAGE_DIR = 'waczs'
 WACZ_PRESIGNED_URL_EXPIRES = 15 * 60
 
-ARCHIVE_FORMATS = ['warc', 'wacz']
+ARCHIVE_FORMATS = ['wacz']
 
 WARC_TO_WACZ_ON_DEMAND = False
 WARC_TO_WACZ_ON_DEMAND_SIZE_LIMIT = 1024 * 1024 * 100 # 100 MB
@@ -561,10 +561,12 @@ MAX_ARCHIVE_FILE_SIZE = 1024 * 1024 * 100  # 100 MB
 # set to the Scoop API's own 502 threshold, currently 60s, plus two seconds for network conditions
 RESOURCE_LOAD_TIMEOUT = 60 + 2
 
-# We're finding that warcs aren't always available for download from S3
-# instantly, immediately after upload. How long do we want to wait for S3
-# to catch up, during first playback, before raising an error?
-WARC_AVAILABLE_RETRIES = 9
+# Long ago, we found that WARCs weren't always available for download from S3
+# instantly, immediately after upload. We decided to retry a few times, to let
+# it catch up, during first playback, before raising an error.
+# This may no longer be a problem with modern S3, but for now, we are
+# retaining the check.
+WACZ_AVAILABLE_RETRIES = 9
 CHECK_WARC_BEFORE_PLAYBACK = False
 
 # tests
