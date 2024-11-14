@@ -446,10 +446,13 @@ class MultipleUsersFormWithOrganization(ModelForm):
 
         file = TextIOWrapper(file, encoding='utf-8')
         reader = csv.DictReader(file)
+        headers = reader.fieldnames
+
+        if not all(item in headers for item in ['first_name', 'last_name', 'email']):
+            raise forms.ValidationError("CSV file must contain first_name, last_name and email header rows.")
 
         for line in reader:
             email = line.get('email')
-
             if not email:
                 raise forms.ValidationError("Each row in the CSV file must contain email.")
 
