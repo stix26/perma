@@ -4,7 +4,6 @@ from dataclasses import dataclass
 import os
 from random import choice
 import subprocess
-from waffle import get_waffle_flag_model
 
 from django.conf import settings
 from django.core.files.storage import storages

@@ -3,7 +3,6 @@ from warcio.timeutils import datetime_to_http_date
 from django.urls import reverse
 
 import pytest
-from waffle.testutils import override_flag
 
 #
 #  Helpers
