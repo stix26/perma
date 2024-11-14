@@ -149,15 +149,6 @@ def user() -> User:
 
 
 @pytest.fixture
-def wacz_user() -> User:
-    """For this user, the 'wacz-playback' flag is True"""
-    u = LinkUser.objects.get(email="wacz_functional_test_user@example.com")
-    flag, _created = get_waffle_flag_model().objects.get_or_create(name="wacz-playback")
-    flag.users.add(u.id)
-    return User(u.email, "pass")
-
-
-@pytest.fixture
 def log_in_user(urls):
     """A utility to log in the desired user"""
     # TODO: if this login fails, the fixture should error out

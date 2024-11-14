@@ -28,13 +28,13 @@ def check_example_playback(page):
                .locator('h1')).to_contain_text("Example Domain")
 
 
-def test_create_link_wacz_playback(page, wacz_user, log_in_user) -> None:
+def test_create_link_wacz_playback(page, user, log_in_user) -> None:
     """
     It should be possible to successfully create a link from a URL.
 
-    This user (with feature flag set) should see a WACZ playback.
+    This user should see a WACZ playback.
     """
-    log_in_user(page, wacz_user)
+    log_in_user(page, user)
     create_link(page)
     check_example_playback(page)
 
