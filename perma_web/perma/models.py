@@ -1,4 +1,5 @@
 import calendar
+from contextlib import contextmanager
 from decimal import Decimal
 from datetime import datetime, timezone as tz
 from dateutil.relativedelta import relativedelta
@@ -16,6 +17,7 @@ import time
 import hmac
 import uuid
 from psycopg2.extras import DateTimeTZRange
+import zipfile
 
 from rest_framework.settings import api_settings
 from simple_history.models import HistoricalRecords
@@ -2020,6 +2022,21 @@ class Link(DeletableModel):
             storage.delete(old_name)
         self.wacz_size = 0
         self.save(update_fields=['wacz_size'])
+
+    @contextmanager
+    def get_warc(self, extract_from_wacz_if_present=True, force_from_wacz=False):
+        if not self.warc_size and not extract_from_wacz_if_present:
+            raise RuntimeError(f'No WARC present for {self.guid}')
+
+        elif self.warc_size and not force_from_wacz:
+            yield storages[settings.WARC_STORAGE].open(self.warc_storage_file(), 'rb')
+
+        elif self.wacz_size:
+            with storages[settings.WACZ_STORAGE].open(self.wacz_storage_file(), 'rb') as wacz_file:
+                yield zipfile.Path(wacz_file, "archive/data.warc.gz").open('rb')
+
+        else:
+            raise RuntimeError(f'No archive present for {self.guid}')
 
     def accessible_to(self, user):
         return user.can_edit(self)

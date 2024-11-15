@@ -2,7 +2,6 @@ from datetime import timedelta
 from link_header import Link as Rel, LinkHeader
 from ratelimit.decorators import ratelimit
 from warcio.timeutils import datetime_to_http_date
-from waffle import flag_is_active
 
 from django.conf import settings
 from django.core.files.storage import storages
@@ -122,8 +121,7 @@ def single_permalink(request, guid):
         'protocol': protocol(),
     }
 
-    playback_type = request.GET.get('playback')
-    if flag_is_active(request, 'wacz-playback') and link.has_wacz_version() and not playback_type == 'warc':
+    if link.has_wacz_version():
         context["playback_url"] = link.wacz_presigned_url_relative()
     else:
         context["playback_url"] = link.warc_presigned_url_relative()
@@ -143,11 +141,11 @@ def single_permalink(request, guid):
         if new_record:
             logger.debug(f"Ensuring warc for {link.guid} has finished uploading.")
             def assert_exists(filename):
-                assert storages[settings.WARC_STORAGE].exists(filename)
+                assert storages[settings.WACZ_STORAGE].exists(filename)
             try:
-                retry_on_exception(assert_exists, args=[link.warc_storage_file()], exception=AssertionError, attempts=settings.WARC_AVAILABLE_RETRIES)
+                retry_on_exception(assert_exists, args=[link.wacz_storage_file()], exception=AssertionError, attempts=settings.WACZ_AVAILABLE_RETRIES)
             except AssertionError:
-                logger.error(f"Made {settings.WARC_AVAILABLE_RETRIES} attempts to get {link.guid}'s warc; still not available.")
+                logger.error(f"Made {settings.WACZ_AVAILABLE_RETRIES} attempts to get {link.guid}'s wacz; still not available.")
                 # Let's consider this a HTTP 200, I think...
                 return render(request, 'archive/playback-delayed.html', context,  status=200)
 

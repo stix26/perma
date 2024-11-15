@@ -206,32 +206,6 @@ def save_scoop_capture(link, capture_job, data):
                 content_type=supported_attachments[attachment_type]['content_type'],
             ).save()
 
-    #
-    # WARC
-    #
-    if 'warc' in capture_job.archive_formats:
-        # mode set to 'ab+' as a workaround for https://github.com/python/cpython/issues/69528
-        with tempfile.TemporaryFile('ab+') as tmp_file:
-            inc_progress(capture_job, 1, "Downloading web archive file (WARC)")
-            response, _ = send_to_scoop(
-                method="get",
-                path=f"artifact/{data['id_capture']}/archive.warc.gz",
-                valid_if=lambda code, _: code == 200,
-                stream=True
-            )
-            # Use the raw response, because Python requests standard methods gunzip the file
-            for chunk in response.raw.stream(10*1024, decode_content=False):
-                if chunk:
-                    tmp_file.write(chunk)
-            tmp_file.flush()
-            link.warc_size = tmp_file.tell()
-            link.save(update_fields=['warc_size'])
-            tmp_file.seek(0)
-
-            inc_progress(capture_job, 1, "Saving web archive file (WARC)")
-            storages[settings.WARC_STORAGE].store_file(
-                tmp_file, link.warc_storage_file(), overwrite=True
-            )
 
     #
     # WACZ
@@ -703,8 +677,8 @@ def upload_link_to_internet_archive(link_guid, attempts=0, timeouts=0):
             # copy warc to local disk storage for upload.
             # (potentially not necessary, but we think more robust against network conditions
             # https://github.com/harvard-lil/perma/commit/25eb14ce634675ffe67d0f14f51308f1202b53ea)
-            with storages[settings.WARC_STORAGE].open(link.warc_storage_file()) as warc_file:
-                logger.info(f"Downloading {link.warc_storage_file()} from S3.")
+            with link.get_warc() as warc_file:
+                logger.info("Downloading archive from S3.")
                 copy_file_data(warc_file, temp_warc_file)
                 temp_warc_file.seek(0)
 
