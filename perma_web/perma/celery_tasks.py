@@ -17,6 +17,7 @@ from celery.exceptions import SoftTimeLimitExceeded
 from celery.signals import task_failure
 import requests
 from requests.packages.urllib3.exceptions import InsecureRequestWarning
+from urllib3.exceptions import ProtocolError
 from zipfile import ZipFile
 
 requests.packages.urllib3.disable_warnings(InsecureRequestWarning)
@@ -38,6 +39,7 @@ from perma.utils import (
     ia_perma_task_limit_approaching, ia_bucket_task_limit_approaching,
     copy_file_data, date_range, send_to_scoop, calculate_s3_etag)
 from perma.email import send_user_email
+from perma.wsgi_utils import retry_on_exception
 
 import logging
 logger = logging.getLogger('celery.django')
@@ -194,31 +196,43 @@ def save_scoop_capture(link, capture_job, data):
 
 
     #
-    # WACZ
+    # Download Archive
     #
-    if 'wacz' in capture_job.archive_formats:
-        # mode set to 'ab+' as a workaround for https://github.com/python/cpython/issues/69528
-        with tempfile.TemporaryFile('ab+') as tmp_file:
-            inc_progress(capture_job, 1, "Downloading web archive file (WACZ)")
+    inc_progress(capture_job, 1, "Downloading web archive file (WACZ)")
+
+    # mode set to 'ab+' as a workaround for https://github.com/python/cpython/issues/69528
+    with tempfile.TemporaryFile('ab+') as tmp_file:
+
+        def download_wacz():
+
+            # Send the API request
             response, _ = send_to_scoop(
                 method="get",
                 path=f"artifact/{data['id_capture']}/archive.wacz",
                 valid_if=lambda code, _: code == 200,
                 stream=True
             )
+
+            # Write the response, chunk by chunk, into the temp file.
             # Use the raw response, because Python requests standard methods gunzip the file
+            tmp_file.seek(0)
             for chunk in response.raw.stream(10 * 1024, decode_content=False):
                 if chunk:
                     tmp_file.write(chunk)
+
+            # Record the file size
             tmp_file.flush()
             link.wacz_size = tmp_file.tell()
             link.save(update_fields=['wacz_size'])
-            tmp_file.seek(0)
 
-            inc_progress(capture_job, 1, "Saving web archive file (WACZ)")
-            storages[settings.WACZ_STORAGE].store_file(
-                tmp_file, link.wacz_storage_file(), overwrite=True
-            )
+        # See Linear issue LIL-2877 for discussion of `ProtocolError`s
+        retry_on_exception(download_wacz, exception=ProtocolError, attempts=settings.SCOOP_WACZ_DOWNLOAD_RETRIES)
+
+        inc_progress(capture_job, 1, "Saving web archive file (WACZ)")
+        tmp_file.seek(0)
+        storages[settings.WACZ_STORAGE].store_file(
+            tmp_file, link.wacz_storage_file(), overwrite=True
+        )
 
     capture_job.mark_completed()
 
