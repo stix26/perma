@@ -30,6 +30,7 @@ from django.utils import timezone
 from perma.celery_tasks import convert_warc_to_wacz, populate_wacz_size
 from perma.email import send_user_email, send_self_email, registrar_users, registrar_users_plus_stats
 from perma.models import Capture, Folder, HistoricalLink, Link, LinkUser, Organization, Registrar
+from perma.utils import calculate_s3_etag
 
 import logging
 logger = logging.getLogger(__name__)
@@ -1465,7 +1466,9 @@ def sample_objects(ctx, n=1000):
     # write to output file
     filename = f"/tmp/sample-{n}-{datetime.isoformat(datetime.now())}.py"
     with open(filename, "w") as f:
+        f.write("import hashlib\nimport math\nfrom pathlib import Path\n\n")
         f.write(f"objects = {objects}\n")
+        f.write(inspect.getsource(calculate_s3_etag))
         f.write(inspect.getsource(check_mirror))
         f.write('if __name__ == "__main__":\n    check_mirror()\n')
 
@@ -1482,10 +1485,6 @@ def check_mirror():
     The remaining arguments on the command line are directories containing
     the folder "generated".
     """
-    import hashlib
-    import math
-    from pathlib import Path
-
     p = float(sys.argv[1])
     directories = sys.argv[2:]
 
@@ -1502,14 +1501,9 @@ def check_mirror():
                 for d in directories:
                     full_path = Path(d) / "generated" / o[archive]["path"]
                     if full_path.exists():
-                        m = hashlib.md5()
                         with open(full_path, "rb") as f:
-                            while True:
-                                buf = f.read(blocksize)
-                                if not buf:
-                                    break
-                                m.update(buf)
-                        if m.hexdigest() != o[archive]["etag"]:
+                            etag = calculate_s3_etag(f, blocksize)
+                        if etag != o[archive]["etag"]:
                             failure += 1
                             print(
                                 f'etag mismatch for {o[archive]["path"]}'
