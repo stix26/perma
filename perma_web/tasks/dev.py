@@ -1433,7 +1433,10 @@ def sample_objects(ctx, n=1000):
         ).e_tag.strip('"')
 
     # obtain a sample of size n
-    links = Link.objects.filter(cached_can_play_back=True).order_by("?")[:n]
+    links = (
+        Link.objects.filter(warc_size__gt=0) |
+        Link.objects.filter(wacz_size__gt=0)
+    ).order_by("?")[:n]
 
     # build a list of paths
     objects = [
