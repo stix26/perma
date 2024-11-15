@@ -138,17 +138,6 @@ def single_permalink(request, guid):
         ):
             convert_warc_to_wacz.delay(link.guid)
 
-        if new_record:
-            logger.debug(f"Ensuring warc for {link.guid} has finished uploading.")
-            def assert_exists(filename):
-                assert storages[settings.WACZ_STORAGE].exists(filename)
-            try:
-                retry_on_exception(assert_exists, args=[link.wacz_storage_file()], exception=AssertionError, attempts=settings.WACZ_AVAILABLE_RETRIES)
-            except AssertionError:
-                logger.error(f"Made {settings.WACZ_AVAILABLE_RETRIES} attempts to get {link.guid}'s wacz; still not available.")
-                # Let's consider this a HTTP 200, I think...
-                return render(request, 'archive/playback-delayed.html', context,  status=200)
-
         logger.info(f'Preparing client-side playback for {link.guid}')
         context['client_side_playback_host'] = settings.PLAYBACK_HOST
         context['embed'] = False if request.GET.get('embed') == 'False' else True
