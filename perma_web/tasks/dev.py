@@ -4,6 +4,7 @@ from datetime import date, datetime, timezone as tz
 from dateutil.relativedelta import relativedelta
 import hashlib
 from invoke import task
+import inspect
 import internetarchive
 import itertools
 import json
@@ -1411,3 +1412,128 @@ def populate_benchmarked_wacz_sizes(ctx, source_csv):
     links = Link.objects.filter(guid__in=guids).values_list('guid', flat=True)
     for link in links.iterator():
         populate_wacz_size.delay(link)
+
+
+@task
+def sample_objects(ctx, n=1000):
+    """
+    Produce a sample of archive paths and etags for assessing completeness
+    of mirroring; because the comparison happens on the mirror, which doesn't
+    know anything about Perma, it produces a Python program to run on the
+    mirror.
+
+    The sample size, n, must be of a size to produce at least ten failures,
+    given an expected proportion of failures.
+    """
+    def get_etag(bucket, path):
+        return storages[bucket].connection.Object(
+            bucket_name=storages[bucket].bucket_name,
+            key=os.path.join(settings.MEDIA_ROOT, path)
+        ).e_tag.strip('"')
+
+    # obtain a sample of size n
+    links = Link.objects.filter(cached_can_play_back=True).order_by("?")[:n]
+
+    # build a list of paths
+    objects = [
+        {
+            "warc": {
+                "path": link.warc_storage_file() if link.warc_size else None,
+                "etag": None
+            },
+            "wacz": {
+                "path": link.wacz_storage_file() if link.wacz_size else None,
+                "etag": None
+            }
+        }
+        for link in links
+    ]
+
+    buckets = {
+        "warc": settings.WARC_STORAGE,
+        "wacz": settings.WACZ_STORAGE
+    }
+
+    # add etags
+    for o in tqdm(objects):
+        for archive in ["warc", "wacz"]:
+            if o[archive]["path"]:
+                o[archive]["etag"] = get_etag(
+                    buckets[archive], o[archive]["path"]
+                )
+
+    # write to output file
+    filename = f"/tmp/sample-{n}-{datetime.isoformat(datetime.now())}.py"
+    with open(filename, "w") as f:
+        f.write(f"objects = {objects}\n")
+        f.write(inspect.getsource(check_mirror))
+        f.write('if __name__ == "__main__":\n    check_mirror()\n')
+
+    print(f"Sample of size {n} written into script {filename}")
+    print("Check it, then copy to the mirror and run it, e.g. with")
+    print(f"python3 {filename} {10 / n} <mirror directory> <...>")
+
+
+def check_mirror():
+    """
+    This is intended for use on the mirror as a main function.
+    The first argument on the command line is the expected proportion of
+    failures, expressed as a float.
+    The remaining arguments on the command line are directories containing
+    the folder "generated".
+    """
+    import hashlib
+    import math
+    from pathlib import Path
+
+    p = float(sys.argv[1])
+    directories = sys.argv[2:]
+
+    n = len(objects)  # noqa
+    successes = 0
+    failures = 0
+    blocksize = 2 ** 20
+
+    for o in objects:  # noqa
+        success = 0
+        failure = 0
+        for archive in ["warc", "wacz"]:
+            if o[archive]["path"]:
+                for d in directories:
+                    full_path = Path(d) / "generated" / o[archive]["path"]
+                    if full_path.exists():
+                        m = hashlib.md5()
+                        with open(full_path, "rb") as f:
+                            while True:
+                                buf = f.read(blocksize)
+                                if not buf:
+                                    break
+                                m.update(buf)
+                        if m.hexdigest() != o[archive]["etag"]:
+                            failure += 1
+                            print(
+                                f'etag mismatch for {o[archive]["path"]}'
+                            )
+                        else:
+                            success += 1
+        if not success:
+            print(f'no file found for {o[archive]["path"]}')
+        if failure or not success:
+            failures += 1
+        else:
+            successes += 1
+
+    assert successes + failures == n
+
+    p_hat = failures / n
+
+    sd = math.sqrt((p * (1 - p)) / n)
+
+    z = (p_hat - p) / sd
+
+    print(f"From a sample of {n} links:")
+    print(f"{successes} successes, {failures} failures")
+    print(f"Expected proportion is {p}")
+    print(f"Standard deviation is {sd}")
+    print(f"Observed proportion is {p_hat}")
+    print(f"z-score is {z}")
