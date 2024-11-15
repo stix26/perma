@@ -722,7 +722,7 @@ class UserManagementViewsTestCase(PermaTestCase):
         self.assertTrue(form5.is_valid())
         form5.save(commit=True)
         self.assertEqual(len(form5.batch_validation_errors), 1)
-        self.assertIn("is an admin user and cannot be added to individual org", form5.batch_validation_errors[0])
+        self.assertEqual("johndoe@example.com", form5.batch_validation_errors[0])
 
     def test_admin_user_can_add_new_user_to_org(self):
         self.log_in_user(self.admin_user)

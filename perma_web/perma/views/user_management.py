@@ -782,11 +782,16 @@ class BaseAddUserToGroup(UpdateView):
                 for user in form.updated_users:
                     send_user_email(user.raw_email, self.confirmation_email_template, { 'form': form })
 
-            if form.batch_validation_errors:
-                messages.add_message(self.request, messages.ERROR,
-                                     f'<h4>Error!</h4>{"<br>".join(form.batch_validation_errors)}', extra_tags='safe')
+            if (form.created_users or form.updated_users) and form.batch_validation_errors:
+                invalid_user_emails = ", ".join(form.batch_validation_errors)
+                messages.add_message(self.request, messages.SUCCESS,
+                                     f'<h4>Success!</h4>New users will receive an email with instructions on how to activate their accounts and create a password.<br>Existing users will receive an email notifying them about their updated organization affiliation.'
+                                     f'<br><br>Note the following users were not added to {form.cleaned_data["organizations"]} because they are already a registrar user or admin user and cannot be added to an individual organization: {invalid_user_emails}',
+                                     extra_tags='safe')
             else: 
-                messages.add_message(self.request, messages.SUCCESS, '<h4>Success!</h4>New users will receive an email with instructions on how to activate their accounts and create a password.<br>Existing users will receive an email notifying them about their updated organization affiliation.', extra_tags='safe')
+                messages.add_message(self.request, messages.SUCCESS,
+                                     '<h4>Success!</h4>New users will receive an email with instructions on how to activate their accounts and create a password.<br>Existing users will receive an email notifying them about their updated organization affiliation.',
+                                     extra_tags='safe')
 
         return response
 
