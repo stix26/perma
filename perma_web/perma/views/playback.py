@@ -4,7 +4,6 @@ from ratelimit.decorators import ratelimit
 from warcio.timeutils import datetime_to_http_date
 
 from django.conf import settings
-from django.core.files.storage import storages
 from django.http import HttpResponseRedirect, HttpResponsePermanentRedirect
 from django.shortcuts import render, get_object_or_404
 from django.utils import timezone
@@ -16,7 +15,6 @@ from perma.models import Link
 from perma.utils import (if_anonymous, ratelimit_ip_key,
     memento_url, timemap_url, timegate_url,
     protocol, remove_control_characters, stream_warc_if_permissible)
-from perma.wsgi_utils import retry_on_exception
 
 import logging
 
