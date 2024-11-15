@@ -1521,7 +1521,7 @@ def check_mirror():
 
     p_hat = failures / n
 
-    sd = math.sqrt((p * (1 - p)) / n)
+    sd = math.sqrt((p * (1 - p)) / n)  # noqa
 
     z = (p_hat - p) / sd
 
