@@ -561,12 +561,6 @@ MAX_ARCHIVE_FILE_SIZE = 1024 * 1024 * 100  # 100 MB
 # set to the Scoop API's own 502 threshold, currently 60s, plus two seconds for network conditions
 RESOURCE_LOAD_TIMEOUT = 60 + 2
 
-# Long ago, we found that WARCs weren't always available for download from S3
-# instantly, immediately after upload. We decided to retry a few times, to let
-# it catch up, during first playback, before raising an error.
-# This may no longer be a problem with modern S3, but for now, we are
-# retaining the check.
-WACZ_AVAILABLE_RETRIES = 9
 CHECK_WARC_BEFORE_PLAYBACK = False
 
 # tests
