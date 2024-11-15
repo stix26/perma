@@ -131,25 +131,6 @@ def save_scoop_capture(link, capture_job, data):
             ])
 
     #
-    # SCREENSHOT
-    #
-
-    screenshot_filename = data['scoop_capture_summary']['attachments'].get("screenshot")
-    if screenshot_filename:
-        Capture(
-            link=link,
-            role='screenshot',
-            status='success',
-            record_type='response',
-            url=f"file:///{screenshot_filename}",
-            content_type='image/png',
-        ).save()
-        try:
-            assert screenshot_filename.lower().endswith('.png')
-        except AssertionError:
-            logger.error(f"The screenshot for {link.guid} is not a PNG. Please update its record and our codebase!")
-
-    #
     # Provenance
     #
 
@@ -179,7 +160,12 @@ def save_scoop_capture(link, capture_job, data):
     #
     # OTHER ATTACHMENTS
     #
+
     supported_attachments = {
+        "screenshot": {
+            'attr': 'screenshot',
+            'content_type': 'image/png',
+        },
         "pdf_snapshot": {
             'attr': 'pdfSnapshot',
             'content_type': 'application/pdf',
