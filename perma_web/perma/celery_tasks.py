@@ -102,8 +102,9 @@ def save_scoop_capture(link, capture_job, data):
     # PRIMARY CAPTURE
     #
 
+    link.primary_capture.status = 'success'
     link.primary_capture.content_type = data['scoop_capture_summary']['targetUrlContentType']
-    link.primary_capture.save(update_fields=['content_type'])
+    link.primary_capture.save(update_fields=['status', 'content_type'])
 
     if 'pageInfo' in data['scoop_capture_summary']:
         title = data['scoop_capture_summary']['pageInfo'].get('title')
@@ -288,6 +289,7 @@ def capture_with_scoop(capture_job):
         # Basic setup
         link = capture_job.link
         target_url = link.ascii_safe_url
+        success = False
 
         # Get started, unless the user has deleted the capture in the meantime
         inc_progress(capture_job, 0, "Starting capture")
@@ -352,8 +354,7 @@ def capture_with_scoop(capture_job):
         capture_job.save(update_fields=['scoop_logs', 'scoop_state'])
 
         if poll_data['status'] == 'success':
-            link.primary_capture.status = 'success'
-            link.primary_capture.save(update_fields=['status'])
+            success = True
         else:
             didnt_load = "ERROR Navigation to page failed (about:blank)"
             proxy_error = "ERROR An error occurred during capture setup"
@@ -385,7 +386,7 @@ def capture_with_scoop(capture_job):
         logger.exception(f"Exception while capturing job {capture_job.link_id}:")
     finally:
         try:
-            if link.primary_capture.status == 'success':
+            if success:
                 save_scoop_capture(link, capture_job, poll_data)
                 print(f"{capture_job.link_id} capture succeeded.")
             else:
