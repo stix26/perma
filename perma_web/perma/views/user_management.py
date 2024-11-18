@@ -758,49 +758,48 @@ class BaseAddUserToGroup(UpdateView):
 
         def add_error_message(title, body):
             messages.add_message(self.request, messages.ERROR, f'<h4>{title}</h4>{body}', extra_tags='safe')
-        
+
+        def send_emails(users, email_function, email_template, extra_context, *args):
+            for obj in users:
+                email_function(*args, obj, email_template, extra_context)
+
+        context = {'form': form}
+
         if not self.is_batch:
             if self.is_new:
-                email_new_user(
-                    self.request,
-                    self.object,
-                    self.user_added_email_template,
-                    {'form': form}
-                )
+                send_emails([self.object], email_new_user, self.user_added_email_template, context, self.request)
                 add_success_message(
                     "Account created!",
                     f"<strong>{self.object.email}</strong> will receive an email with instructions on how to activate the account and create a password."
                 )
             else:
-                send_user_email(
-                    self.object.raw_email,
+                send_emails(
+                    [self.object],
+                    send_user_email,
                     self.confirmation_email_template,
                     {
                         'account_settings_page': f"https://{self.request.get_host()}{reverse('settings_profile')}",
-                        'form': form
-                    }
+                        'form': form,
+                    },
                 )
                 add_success_message("Success!", f"<strong>{self.object.email}</strong> added.")
         else:
             if form.created_users:
-                for user in form.created_users:
-                    email_new_user(self.request, user, self.user_added_email_template, { 'form': form })
+                send_emails(form.created_users, email_new_user, self.user_added_email_template, context, self.request)
             if form.updated_users:
-                for user in form.updated_users:
-                    send_user_email(user.raw_email, self.confirmation_email_template, { 'form': form })
+                send_emails(form.updated_users, send_user_email, self.confirmation_email_template, context)
 
             success_message = 'New users will receive an email with instructions on how to activate their accounts and create a password.<br>Existing users will receive an email notifying them about their updated organization affiliation.'
 
             if form.batch_validation_errors:
+                invalid_user_emails = ", ".join(form.batch_validation_errors)
                 if form.created_users or form.updated_users:
-                    invalid_user_emails = ", ".join(form.batch_validation_errors)
                     add_success_message(
                         "Success!",
                         f"{success_message}<br><br>Note the following users were not added to {form.cleaned_data['organizations']} "
                         f"because they are already a registrar user or admin user and cannot be added to an individual organization: {invalid_user_emails}"
                     )
                 else:
-                    invalid_user_emails = ", ".join(form.batch_validation_errors)
                     add_error_message(
                         "Error!",
                         f"Note the following users were not added to {form.cleaned_data['organizations']} because they are already a registrar user or admin user "
