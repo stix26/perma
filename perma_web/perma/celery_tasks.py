@@ -17,7 +17,7 @@ from celery.exceptions import SoftTimeLimitExceeded
 from celery.signals import task_failure
 import requests
 from requests.packages.urllib3.exceptions import InsecureRequestWarning
-from urllib3.exceptions import ProtocolError
+from urllib3.exceptions import ProtocolError, ReadTimeoutError
 from zipfile import ZipFile
 
 requests.packages.urllib3.disable_warnings(InsecureRequestWarning)
@@ -32,7 +32,7 @@ from django.template.defaultfilters import pluralize, filesizeformat
 
 from perma.models import LinkUser, Link, Capture, \
     CaptureJob, InternetArchiveItem, InternetArchiveFile, Folder, Sponsorship, UserOrganizationAffiliation
-from perma.exceptions import PermaPaymentsCommunicationException, ScoopAPINetworkException
+from perma.exceptions import PermaPaymentsCommunicationException, ScoopAPINetworkException, ScoopAPIException
 from perma.utils import (
     remove_whitespace,
     get_ia_session, ia_global_task_limit_approaching,
@@ -127,9 +127,18 @@ def save_scoop_capture(link, capture_job, data):
             link.wacz_size = tmp_file.tell()
             link.save(update_fields=['wacz_size'])
 
-        # See Linear issue LIL-2877 for discussion of `ProtocolError`s
-        retry_on_exception(download_wacz, exception=ProtocolError, attempts=settings.SCOOP_WACZ_DOWNLOAD_RETRIES)
-
+        # See Linear issue LIL-2877 for discussion of these exceptions
+        retry_on_exception(
+            download_wacz,
+            exception=(
+                ProtocolError,
+                ReadTimeoutError,
+                ScoopAPINetworkException,
+                ScoopAPIException,
+                SoftTimeLimitExceeded
+            ),
+            attempts=settings.SCOOP_WACZ_DOWNLOAD_RETRIES
+        )
         inc_progress(capture_job, 1, "Saving web archive file (WACZ)")
         tmp_file.seek(0)
         storages[settings.WACZ_STORAGE].store_file(
