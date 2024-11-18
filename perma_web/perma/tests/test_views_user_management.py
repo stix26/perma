@@ -639,21 +639,25 @@ class UserManagementViewsTestCase(PermaTestCase):
                          ).exists())
 
     def test_add_multiple_org_users_via_csv(self):
+        def create_csv_file(filename, content):
+            return SimpleUploadedFile(filename, content.encode('utf-8'), content_type='text/csv')
+
+        def initialize_form(csv_file, data=None):
+            data = {'organizations': selected_organization.pk, 'indefinite_affiliation': True}
+            return MultipleUsersFormWithOrganization(request=request, data=data, files={'csv_file': csv_file})
+
         # --- initialize data ---
         csv_data = 'first_name,last_name,email\nJohn,Doe,johndoe@example.com\nJane,Smith,janesmith@example.com'
-        valid_csv_file = SimpleUploadedFile('users.csv',
-                                            csv_data.encode('utf-8'), content_type='text/csv')
         another_csv_data = 'first_name,last_name,email\nJohn2,Doe,john2doe@example.com\nJane2,Smith,jane2smith@example.com'
-        another_valid_csv_file = SimpleUploadedFile('another_valid_users.csv',
-                                                    another_csv_data.encode('utf-8'), content_type='text/csv')
-        one_more_valid_csv_file = SimpleUploadedFile('one_more_valid_users.csv',
-                                                     csv_data.encode('utf-8'),content_type='text/csv')
         invalid_csv_data = 'name\nJohn Doe'
-        invalid_csv_file = SimpleUploadedFile('invalid_users.csv',
-                                              invalid_csv_data.encode('utf-8'), content_type='text/csv')
         another_invalid_csv_data = 'first_name,last_name,email\nJohn,Doe,\nJane,Smith,janesmith@example.com'
-        another_invalid_csv_file = SimpleUploadedFile('another_invalid_users.csv',
-                                                      another_invalid_csv_data.encode('utf-8'), content_type='text/csv')
+
+        valid_csv_file = create_csv_file('users.csv', csv_data)
+        another_valid_csv_file = create_csv_file('another_valid_users.csv', another_csv_data)
+        one_more_valid_csv_file = create_csv_file('one_more_valid_users.csv', csv_data)
+        invalid_csv_file = create_csv_file('invalid_users.csv', invalid_csv_data)
+        another_invalid_csv_file = create_csv_file('another_invalid_users.csv', another_invalid_csv_data)
+
         request = RequestFactory().get('/')
         request.user = self.registrar_user
         selected_organization = self.another_organization
@@ -668,27 +672,17 @@ class UserManagementViewsTestCase(PermaTestCase):
 
         # --- test csv validation ---
         # valid csv
-        form1 = MultipleUsersFormWithOrganization(request=request,
-                                                  data={'organizations': selected_organization.pk,
-                                                        'indefinite_affiliation': True},
-                                                  files={'csv_file': valid_csv_file})
-
+        form1 = initialize_form(valid_csv_file)
         self.assertTrue(form1.is_valid())
 
-        # invalid csv
-        form2 = MultipleUsersFormWithOrganization(request=request,
-                                                  data={'organizations': selected_organization.pk,
-                                                        'indefinite_affiliation': True},
-                                                  files={'csv_file': invalid_csv_file})
+        # invalid csv - missing headers
+        form2 = initialize_form(invalid_csv_file)
         self.assertFalse(form2.is_valid())
         self.assertTrue("CSV file must contain first_name, last_name and email header rows."
                         in form2.errors['csv_file'])
 
-        # invalid csv
-        form3 = MultipleUsersFormWithOrganization(request=request,
-                                                  data={'organizations': selected_organization.pk,
-                                                        'indefinite_affiliation': True},
-                                                  files={'csv_file': another_invalid_csv_file})
+        # invalid csv - missing email field
+        form3 = initialize_form(another_invalid_csv_file)
         self.assertFalse(form3.is_valid())
         self.assertTrue("Each row in the CSV file must contain email."
                         in form3.errors['csv_file'])
@@ -702,10 +696,7 @@ class UserManagementViewsTestCase(PermaTestCase):
 
         # --- test user update ---
         existing_user = LinkUser.objects.create(email="john2doe@example.com", first_name="John2", last_name="Doe")
-        form4 = MultipleUsersFormWithOrganization(request=request,
-                                                  data={'organizations': selected_organization.pk,
-                                                        'indefinite_affiliation': True},
-                                                  files={'csv_file': another_valid_csv_file})
+        form4 = initialize_form(another_valid_csv_file)
         self.assertTrue(form4.is_valid())
         form4.save(commit=True)
         self.assertEqual(len(form4.updated_users), 1)
@@ -715,10 +706,7 @@ class UserManagementViewsTestCase(PermaTestCase):
 
         # --- test validation errors ---
         LinkUser.objects.filter(raw_email="johndoe@example.com").update(is_staff=True)
-        form5 = MultipleUsersFormWithOrganization(request=request,
-                                                  data={'organizations': selected_organization.pk,
-                                                        'indefinite_affiliation': True},
-                                                  files={'csv_file': one_more_valid_csv_file})
+        form5 = initialize_form(one_more_valid_csv_file)
         self.assertTrue(form5.is_valid())
         form5.save(commit=True)
         self.assertEqual(len(form5.batch_validation_errors), 1)
