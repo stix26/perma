@@ -795,14 +795,14 @@ class BaseAddUserToGroup(UpdateView):
             if form.batch_validation_errors:
                 invalid_user_emails = ", ".join(form.batch_validation_errors)
                 error_message = (
-                    f"Note the following users were not added to {form.cleaned_data['organizations']} because they are "
+                    f"The following users were not added to {form.cleaned_data['organizations']} because they are "
                     f"already a registrar user or admin user and cannot be added to an individual organization: {invalid_user_emails}"
                 )
                 if form.created_users or form.updated_users:
                     add_message(
                         messages.SUCCESS,
                         "Success!",
-                        f"{success_message}<br><br>{error_message}"
+                        f"{success_message}<br><br>Note: {error_message}"
                     )
                 else:
                     add_message(messages.ERROR, "Error!", error_message)
