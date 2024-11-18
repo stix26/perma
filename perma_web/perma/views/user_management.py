@@ -753,11 +753,8 @@ class BaseAddUserToGroup(UpdateView):
         """ If form is submitted successfully, show success message and send email to target user. """
         response = super(BaseAddUserToGroup, self).form_valid(form)
 
-        def add_success_message(title, body):
-            messages.add_message(self.request, messages.SUCCESS, f'<h4>{title}</h4>{body}', extra_tags='safe')
-
-        def add_error_message(title, body):
-            messages.add_message(self.request, messages.ERROR, f'<h4>{title}</h4>{body}', extra_tags='safe')
+        def add_message(level, title, body):
+            messages.add_message(self.request, level, f'<h4>{title}</h4>{body}', extra_tags='safe')
 
         def send_emails(users, email_function, email_template, extra_context, *args):
             for obj in users:
@@ -768,7 +765,8 @@ class BaseAddUserToGroup(UpdateView):
         if not self.is_batch:
             if self.is_new:
                 send_emails([self.object], email_new_user, self.user_added_email_template, context, self.request)
-                add_success_message(
+                add_message(
+                    messages.SUCCESS,
                     "Account created!",
                     f"<strong>{self.object.email}</strong> will receive an email with instructions on how to activate the account and create a password."
                 )
@@ -782,31 +780,34 @@ class BaseAddUserToGroup(UpdateView):
                         'form': form,
                     },
                 )
-                add_success_message("Success!", f"<strong>{self.object.email}</strong> added.")
+                add_message(messages.SUCCESS, "Success!", f"<strong>{self.object.email}</strong> added.")
         else:
             if form.created_users:
                 send_emails(form.created_users, email_new_user, self.user_added_email_template, context, self.request)
             if form.updated_users:
                 send_emails(form.updated_users, send_user_email, self.confirmation_email_template, context)
 
-            success_message = 'New users will receive an email with instructions on how to activate their accounts and create a password.<br>Existing users will receive an email notifying them about their updated organization affiliation.'
+            success_message = (
+                "New users will receive an email with instructions on how to activate their accounts and create a password.<br>"
+                "Existing users will receive an email notifying them about their updated organization affiliation."
+            )
 
             if form.batch_validation_errors:
                 invalid_user_emails = ", ".join(form.batch_validation_errors)
+                error_message = (
+                    f"Note the following users were not added to {form.cleaned_data['organizations']} because they are "
+                    f"already a registrar user or admin user and cannot be added to an individual organization: {invalid_user_emails}"
+                )
                 if form.created_users or form.updated_users:
-                    add_success_message(
+                    add_message(
+                        messages.SUCCESS,
                         "Success!",
-                        f"{success_message}<br><br>Note the following users were not added to {form.cleaned_data['organizations']} "
-                        f"because they are already a registrar user or admin user and cannot be added to an individual organization: {invalid_user_emails}"
+                        f"{success_message}<br><br>{error_message}"
                     )
                 else:
-                    add_error_message(
-                        "Error!",
-                        f"Note the following users were not added to {form.cleaned_data['organizations']} because they are already a registrar user or admin user "
-                        f"and cannot be added to an individual organization: {invalid_user_emails}"
-                    )
+                    add_message(messages.ERROR, "Error!", error_message)
             else:
-                add_success_message("Success!", success_message)
+                add_message(messages.SUCCESS, "Success!", success_message)
 
         return response
 
