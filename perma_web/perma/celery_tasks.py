@@ -96,6 +96,46 @@ def inc_progress(capture_job, inc, description):
 
 def save_scoop_capture(link, capture_job, data):
 
+    #
+    # Download Archive
+    #
+
+    inc_progress(capture_job, 1, "Downloading web archive file (WACZ)")
+
+    # mode set to 'ab+' as a workaround for https://github.com/python/cpython/issues/69528
+    with tempfile.TemporaryFile('ab+') as tmp_file:
+
+        def download_wacz():
+
+            # Send the API request
+            response, _ = send_to_scoop(
+                method="get",
+                path=f"artifact/{data['id_capture']}/archive.wacz",
+                valid_if=lambda code, _: code == 200,
+                stream=True
+            )
+
+            # Write the response, chunk by chunk, into the temp file.
+            # Use the raw response, because Python requests standard methods gunzip the file
+            tmp_file.seek(0)
+            for chunk in response.raw.stream(10 * 1024, decode_content=False):
+                if chunk:
+                    tmp_file.write(chunk)
+
+            # Record the file size
+            tmp_file.flush()
+            link.wacz_size = tmp_file.tell()
+            link.save(update_fields=['wacz_size'])
+
+        # See Linear issue LIL-2877 for discussion of `ProtocolError`s
+        retry_on_exception(download_wacz, exception=ProtocolError, attempts=settings.SCOOP_WACZ_DOWNLOAD_RETRIES)
+
+        inc_progress(capture_job, 1, "Saving web archive file (WACZ)")
+        tmp_file.seek(0)
+        storages[settings.WACZ_STORAGE].store_file(
+            tmp_file, link.wacz_storage_file(), overwrite=True
+        )
+
     inc_progress(capture_job, 1, "Saving metadata")
 
     #
@@ -195,45 +235,6 @@ def save_scoop_capture(link, capture_job, data):
                 content_type=supported_attachments[attachment_type]['content_type'],
             ).save()
 
-
-    #
-    # Download Archive
-    #
-    inc_progress(capture_job, 1, "Downloading web archive file (WACZ)")
-
-    # mode set to 'ab+' as a workaround for https://github.com/python/cpython/issues/69528
-    with tempfile.TemporaryFile('ab+') as tmp_file:
-
-        def download_wacz():
-
-            # Send the API request
-            response, _ = send_to_scoop(
-                method="get",
-                path=f"artifact/{data['id_capture']}/archive.wacz",
-                valid_if=lambda code, _: code == 200,
-                stream=True
-            )
-
-            # Write the response, chunk by chunk, into the temp file.
-            # Use the raw response, because Python requests standard methods gunzip the file
-            tmp_file.seek(0)
-            for chunk in response.raw.stream(10 * 1024, decode_content=False):
-                if chunk:
-                    tmp_file.write(chunk)
-
-            # Record the file size
-            tmp_file.flush()
-            link.wacz_size = tmp_file.tell()
-            link.save(update_fields=['wacz_size'])
-
-        # See Linear issue LIL-2877 for discussion of `ProtocolError`s
-        retry_on_exception(download_wacz, exception=ProtocolError, attempts=settings.SCOOP_WACZ_DOWNLOAD_RETRIES)
-
-        inc_progress(capture_job, 1, "Saving web archive file (WACZ)")
-        tmp_file.seek(0)
-        storages[settings.WACZ_STORAGE].store_file(
-            tmp_file, link.wacz_storage_file(), overwrite=True
-        )
 
     capture_job.mark_completed()
 
