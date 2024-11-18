@@ -752,6 +752,12 @@ class BaseAddUserToGroup(UpdateView):
     def form_valid(self, form):
         """ If form is submitted successfully, show success message and send email to target user. """
         response = super(BaseAddUserToGroup, self).form_valid(form)
+
+        def add_success_message(title, body):
+            messages.add_message(self.request, messages.SUCCESS, f'<h4>{title}</h4>{body}', extra_tags='safe')
+
+        def add_error_message(title, body):
+            messages.add_message(self.request, messages.ERROR, f'<h4>{title}</h4>{body}', extra_tags='safe')
         
         if not self.is_batch:
             if self.is_new:
@@ -759,21 +765,22 @@ class BaseAddUserToGroup(UpdateView):
                     self.request,
                     self.object,
                     self.user_added_email_template,
-                    { 'form': form }
+                    {'form': form}
                 )
-                messages.add_message(self.request, messages.SUCCESS,
-                                    f'<h4>Account created!</h4> <strong>{self.object.email}</strong> will receive an email with instructions on how to activate the account and create a password.',
-                                    extra_tags='safe')
+                add_success_message(
+                    "Account created!",
+                    f"<strong>{self.object.email}</strong> will receive an email with instructions on how to activate the account and create a password."
+                )
             else:
                 send_user_email(
                     self.object.raw_email,
                     self.confirmation_email_template,
-                    { 'account_settings_page': f"https://{self.request.get_host()}{reverse('settings_profile')}",
-                    'form': form }
+                    {
+                        'account_settings_page': f"https://{self.request.get_host()}{reverse('settings_profile')}",
+                        'form': form
+                    }
                 )
-                messages.add_message(self.request, messages.SUCCESS,
-                                    f'<h4>Success!</h4> <strong>{self.object.email}</strong> added.',
-                                    extra_tags='safe')
+                add_success_message("Success!", f"<strong>{self.object.email}</strong> added.")
         else:
             if form.created_users:
                 for user in form.created_users:
@@ -782,22 +789,25 @@ class BaseAddUserToGroup(UpdateView):
                 for user in form.updated_users:
                     send_user_email(user.raw_email, self.confirmation_email_template, { 'form': form })
 
-            success_message = '<h4>Success!</h4>New users will receive an email with instructions on how to activate their accounts and create a password.<br>Existing users will receive an email notifying them about their updated organization affiliation.'
+            success_message = 'New users will receive an email with instructions on how to activate their accounts and create a password.<br>Existing users will receive an email notifying them about their updated organization affiliation.'
 
             if form.batch_validation_errors:
                 if form.created_users or form.updated_users:
                     invalid_user_emails = ", ".join(form.batch_validation_errors)
-                    messages.add_message(self.request, messages.SUCCESS,
-                                         f'{success_message}'
-                                         f'<br><br>Note the following users were not added to {form.cleaned_data["organizations"]} because they are already a registrar user or admin user and cannot be added to an individual organization: {invalid_user_emails}',
-                                         extra_tags='safe')
+                    add_success_message(
+                        "Success!",
+                        f"{success_message}<br><br>Note the following users were not added to {form.cleaned_data['organizations']} "
+                        f"because they are already a registrar user or admin user and cannot be added to an individual organization: {invalid_user_emails}"
+                    )
                 else:
                     invalid_user_emails = ", ".join(form.batch_validation_errors)
-                    messages.add_message(self.request, messages.ERROR,
-                                         f'<h4>Error!</h4>Note the following users were not added to {form.cleaned_data["organizations"]} because they are already a registrar user or admin user and cannot be added to an individual organization: {invalid_user_emails}',
-                                         extra_tags='safe')
+                    add_error_message(
+                        "Error!",
+                        f"Note the following users were not added to {form.cleaned_data['organizations']} because they are already a registrar user or admin user "
+                        f"and cannot be added to an individual organization: {invalid_user_emails}"
+                    )
             else:
-                messages.add_message(self.request, messages.SUCCESS, f'{success_message}', extra_tags='safe')
+                add_success_message("Success!", success_message)
 
         return response
 
