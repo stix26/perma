@@ -91,15 +91,9 @@ def inc_progress(capture_job, inc, description):
     print(f"{capture_job.link.guid} step {capture_job.step_count}: {capture_job.step_description}")
 
 
-
 ### CAPTURE COMPLETION ###
 
-def save_scoop_capture(link, capture_job, data):
-
-    #
-    # Download Archive
-    #
-
+def save_scoop_archive(link, capture_job, data):
     inc_progress(capture_job, 1, "Downloading web archive file (WACZ)")
 
     # mode set to 'ab+' as a workaround for https://github.com/python/cpython/issues/69528
@@ -145,12 +139,12 @@ def save_scoop_capture(link, capture_job, data):
             tmp_file, link.wacz_storage_file(), overwrite=True
         )
 
+
+def save_archive_metadata(link, capture_job, data):
+
     inc_progress(capture_job, 1, "Saving metadata")
 
-    #
-    # PRIMARY CAPTURE
-    #
-
+    # Primary capture
     link.primary_capture.status = 'success'
     link.primary_capture.content_type = data['scoop_capture_summary']['targetUrlContentType']
     link.primary_capture.save(update_fields=['status', 'content_type'])
@@ -182,10 +176,7 @@ def save_scoop_capture(link, capture_job, data):
                 'private_reason'
             ])
 
-    #
     # Provenance
-    #
-
     provenance_filename = data['scoop_capture_summary']['attachments'].get("provenanceSummary")
     if provenance_filename:
         Capture(
@@ -209,10 +200,7 @@ def save_scoop_capture(link, capture_job, data):
         link.tags.add('scoop-missing-provenance')
         logger.warning(f"{capture_job.link_id}: Scoop warc does not contain provenance summary ({data['id_capture']}).")
 
-    #
-    # OTHER ATTACHMENTS
-    #
-
+    # Other attachments
     supported_attachments = {
         "screenshot": {
             'attr': 'screenshot',
@@ -243,9 +231,6 @@ def save_scoop_capture(link, capture_job, data):
                 url=f"file:///{attachment_filename}",
                 content_type=supported_attachments[attachment_type]['content_type'],
             ).save()
-
-
-    capture_job.mark_completed()
 
 
 def clean_up_failed_captures():
@@ -397,7 +382,9 @@ def capture_with_scoop(capture_job):
     finally:
         try:
             if success:
-                save_scoop_capture(link, capture_job, poll_data)
+                save_scoop_archive(link, capture_job, poll_data)
+                save_archive_metadata(link, capture_job, poll_data)
+                capture_job.mark_completed()
                 print(f"{capture_job.link_id} capture succeeded.")
             else:
                 print(f"{capture_job.link_id} capture failed.")
