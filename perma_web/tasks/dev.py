@@ -28,7 +28,7 @@ from django.utils import timezone
 
 from perma.celery_tasks import convert_warc_to_wacz, populate_wacz_size
 from perma.email import send_user_email, send_self_email, registrar_users, registrar_users_plus_stats
-from perma.models import Capture, Folder, HistoricalLink, Link, LinkUser, Organization, Registrar
+from perma.models import Capture, Folder, Link, LinkUser, Organization, Registrar
 
 import logging
 logger = logging.getLogger(__name__)
@@ -614,7 +614,7 @@ def test_db_connection(ctx, connection):
 def populate_link_surt_column(ctx, batch_size=500, model='Link'):
     logger.info("BEGIN: populate_link_surt_column")
 
-    models = {'Link': Link, 'HistoricalLink': HistoricalLink}
+    models = {'Link': Link}
     links = models[model].objects.filter(submitted_url_surt__isnull=True)
 
     # limit to our desired batch size
