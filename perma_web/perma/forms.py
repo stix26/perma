@@ -424,7 +424,7 @@ class MultipleUsersFormWithOrganization(ModelForm):
         self.request = request
         self.created_users = []
         self.updated_users = []
-        self.batch_validation_errors = []
+        self.ineligible_users = []
 
         # Filter available organizations based on the current user
         query = self.fields['organizations'].queryset
@@ -490,7 +490,7 @@ class MultipleUsersFormWithOrganization(ModelForm):
                 user = existing_users_dict[email]
                 if commit:
                     if user.is_staff or user.is_registrar_user():
-                        self.batch_validation_errors.append(user.raw_email)
+                        self.ineligible_users.append(user.raw_email)
                     else:
                         updated_user_affiliations.append(user)
                         self.updated_users.append(user)
