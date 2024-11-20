@@ -1,20 +1,22 @@
-from axes.utils import reset as reset_login_attempts
-import string
+import logging
 import secrets
+import string
+from typing import Any, Mapping
 
+from axes.utils import reset as reset_login_attempts
 from django import forms
 from django.conf import settings
 from django.contrib.auth.forms import SetPasswordForm
+from django.core.exceptions import ObjectDoesNotExist, ValidationError
 from django.db.models.fields import BLANK_CHOICE_DASH
 from django.forms import Form, ModelForm
 from django.http import HttpRequest, HttpResponseRedirect
 from django.urls import reverse
 from django.utils.html import mark_safe
 
-from perma.models import Registrar, Organization, LinkUser, Sponsorship, UserOrganizationAffiliation
+from perma.models import LinkUser, Organization, Registrar, Sponsorship, UserOrganizationAffiliation
 from perma.utils import get_client_ip
 
-import logging
 logger = logging.getLogger(__name__)
 
 ### HELPERS ###
@@ -96,7 +98,7 @@ class LibraryRegistrarForm(ModelForm):
 
 ### FIRM (OTHER ORG) QUOTE FORMS ###
 
-class FirmOrganizationForm(ModelForm):
+class FirmRegistrarForm(ModelForm):
     class Meta:
         model = Registrar
         fields = ['name', 'email', 'website']
@@ -105,6 +107,47 @@ class FirmOrganizationForm(ModelForm):
             'email': 'Organization email',
             'website': 'Organization website',
         }
+
+
+class ApproveRegistrarForm(ModelForm):
+    registrar_user = forms.EmailField(required=False)
+
+    class Meta:
+        model = Registrar
+        fields = ['base_rate', 'status']
+
+    def __init__(self, data: Mapping[str, Any], registrar: Registrar, *args, **kwargs):
+        super().__init__(data, *args, **kwargs)
+
+        # Populate base rate default value from model
+        self.fields['base_rate'].initial = registrar.base_rate
+        self.fields['base_rate'].widget.attrs.setdefault('value', str(registrar.base_rate))
+
+        # Require base rate and status only if paid registrar has a registrar user
+        has_registrar_user = registrar.pending_users.exists() or registrar.users.exists()
+        is_paid_registrar = registrar.nonpaying is False
+        if has_registrar_user and is_paid_registrar:
+            self.fields['base_rate'].required = True
+            self.fields['status'].required = True
+        else:
+            self.fields['base_rate'].required = False
+            self.fields['status'].required = False
+
+    def clean_registrar_user(self) -> str | None:
+        """Validate whether a LinkUser matching the supplied email exists."""
+        cleaned_value = self.cleaned_data['registrar_user'].lower()
+        if not cleaned_value:
+            return None
+
+        try:
+            LinkUser.objects.get(email=cleaned_value)
+        except ObjectDoesNotExist as error:
+            raise ValidationError(
+                'Email %(email)s does not match an existing user account',
+                params={'email': self.cleaned_data['registrar_user']},
+            ) from error
+        else:
+            return cleaned_value
 
 
 class FirmUsageForm(Form):
@@ -310,13 +353,13 @@ class CreateUserFormWithFirm(UserForm):
     add firm to the create user form
     """
 
-    would_be_org_admin = forms.ChoiceField(
+    registrar_user_candidate = forms.ChoiceField(
         widget=forms.Select, choices=[(True, 'Yes'), (False, 'No')], initial=(False, 'No')
     )
 
     class Meta:
         model = LinkUser
-        fields = ['first_name', 'last_name', 'email', 'would_be_org_admin']
+        fields = ['first_name', 'last_name', 'email', 'registrar_user_candidate']
 
     def __init__(self, *args, **kwargs):
         super(CreateUserFormWithFirm, self).__init__(*args, **kwargs)
@@ -324,7 +367,7 @@ class CreateUserFormWithFirm(UserForm):
         self.fields['first_name'].label = 'Your first name'
         self.fields['last_name'].label = 'Your last name'
         self.fields['email'].label = 'Your email'
-        self.fields['would_be_org_admin'].label = 'Would you be an administrator on this account?'
+        self.fields['registrar_user_candidate'].label = 'Would you be an administrator on this account?'
 
         # Populate and set visibility of fields based on whether user is logged in
         if hasattr(self, 'request') and self.user_is_logged_in(self.request):
