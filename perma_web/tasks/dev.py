@@ -1464,7 +1464,8 @@ def sample_objects(ctx, n=1000):
                 )
 
     # write to output file
-    filename = f"/tmp/sample-{n}-{datetime.isoformat(datetime.now())}.py"
+    timestamp = datetime.isoformat(datetime.now()).replace(":", "")
+    filename = f"/tmp/sample-{n}-{timestamp}.py"
     with open(filename, "w") as f:
         f.write("import hashlib\n")
         f.write("import math\n")
