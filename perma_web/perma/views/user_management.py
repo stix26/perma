@@ -62,6 +62,7 @@ from perma.utils import (
     user_passes_test_or_403,
 )
 from perma.views.user_sign_up import email_new_user
+from waffle import flag_is_active
 
 logger = logging.getLogger(__name__)
 valid_member_sorts = ['last_name', '-last_name', 'date_joined', '-date_joined', 'last_login', '-last_login', 'link_count', '-link_count']
@@ -538,14 +539,14 @@ def list_users_in_group(request, group_name):
         'orgs': orgs,
         'total_created_links_count': total_created_links_count,
         'registrars': registrars,
-        'group_name':group_name,
-        'pretty_group_name':group_name.replace('_', ' ').capitalize(),
-        'user_list_url':f'user_management_manage_{group_name}',
-        'reactivate_user_url':f'user_management_manage_single_{group_name}_reactivate',
-        'single_user_url':f'user_management_manage_single_{group_name}',
-        'delete_user_url':f'user_management_manage_single_{group_name}_delete',
-        'add_user_url':f'user_management_{group_name}_add_user',
-        'add_multiple_users_url':f'user_management_{group_name}_add_multiple_users',
+        'group_name': group_name,
+        'pretty_group_name': group_name.replace('_', ' ').capitalize(),
+        'user_list_url': f'user_management_manage_{group_name}',
+        'reactivate_user_url': f'user_management_manage_single_{group_name}_reactivate',
+        'single_user_url': f'user_management_manage_single_{group_name}',
+        'delete_user_url': f'user_management_manage_single_{group_name}_delete',
+        'add_user_url': f'user_management_{group_name}_add_user',
+        'add_multiple_users_url': f'user_management_{group_name}_add_multiple_users',
 
         'sort': sort,
         'search_query': search_query,
@@ -556,6 +557,7 @@ def list_users_in_group(request, group_name):
         'sponsorship_status': sponsorship_status
     }
     context['pretty_group_name_plural'] = context['pretty_group_name'] + "s"
+    context['bulk_org_user_creation_feature_flag'] = flag_is_active(request, 'bulk-organization-user-creation')
 
     return render(request, 'user_management/manage_users.html', context)
 
