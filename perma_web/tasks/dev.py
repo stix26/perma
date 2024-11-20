@@ -1466,7 +1466,10 @@ def sample_objects(ctx, n=1000):
     # write to output file
     filename = f"/tmp/sample-{n}-{datetime.isoformat(datetime.now())}.py"
     with open(filename, "w") as f:
-        f.write("import hashlib\nimport math\nfrom pathlib import Path\n\n")
+        f.write("import hashlib\n")
+        f.write("import math\n")
+        f.write("import sys\n")
+        f.write("from pathlib import Path\n\n")
         f.write(f"objects = {objects}\n")
         f.write(inspect.getsource(calculate_s3_etag))
         f.write(inspect.getsource(check_mirror))
