@@ -759,14 +759,18 @@ class BaseAddUserToGroup(UpdateView):
             messages.add_message(self.request, level, f'<h4>{title}</h4>{body}', extra_tags='safe')
 
         def send_emails(users, email_function, email_template, extra_context, *args):
-            for obj in users:
-                email_function(*args, obj, email_template, extra_context)
+            if email_function == 'email_new_user':
+                for obj in users:
+                    email_new_user(*args, obj, email_template, extra_context)
+            else:
+                for obj in users:
+                    send_user_email(obj.raw_email, email_template, extra_context)
 
         context = {'form': form}
 
         if not self.is_batch:
             if self.is_new:
-                send_emails([self.object], email_new_user, self.user_added_email_template, context, self.request)
+                send_emails([self.object], 'email_new_user', self.user_added_email_template, context, self.request)
                 add_message(
                     messages.SUCCESS,
                     "Account created!",
@@ -775,7 +779,7 @@ class BaseAddUserToGroup(UpdateView):
             else:
                 send_emails(
                     [self.object],
-                    send_user_email,
+                    'send_user_email',
                     self.confirmation_email_template,
                     {
                         'account_settings_page': f"https://{self.request.get_host()}{reverse('settings_profile')}",
@@ -785,9 +789,9 @@ class BaseAddUserToGroup(UpdateView):
                 add_message(messages.SUCCESS, "Success!", f"<strong>{self.object.email}</strong> added.")
         else:
             if form.created_users:
-                send_emails(form.created_users, email_new_user, self.user_added_email_template, context, self.request)
+                send_emails(form.created_users, 'email_new_user', self.user_added_email_template, context, self.request)
             if form.updated_users:
-                send_emails(form.updated_users, send_user_email, self.confirmation_email_template, context)
+                send_emails(form.updated_users, 'send_user_email', self.confirmation_email_template, context)
 
             success_message = (
                 "New users will receive an email with instructions on how to activate their accounts and create a password.<br>"
