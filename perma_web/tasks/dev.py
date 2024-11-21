@@ -1470,7 +1470,8 @@ def sample_objects(ctx, n=1000):
         f.write("import hashlib\n")
         f.write("import math\n")
         f.write("import sys\n")
-        f.write("from pathlib import Path\n\n")
+        f.write("from pathlib import Path\n")
+        f.write("from statistics import NormalDist\n\n")
         f.write(f"objects = {objects}\n")
         f.write(inspect.getsource(calculate_s3_etag))
         f.write(inspect.getsource(check_mirror))
@@ -1493,9 +1494,13 @@ def check_mirror():
     directories = sys.argv[2:]
 
     n = len(objects)  # noqa
+    if n * p < 10 or n - (n * p) < 10:
+        print(f"Sample size of {n} does not satisfy the success/failure condition for p of {p}.")  # noqa
+        return
+
     successes = 0
     failures = 0
-    blocksize = 2 ** 20
+    blocksize = 2 ** 20 * 8
 
     for o in objects:  # noqa
         success = 0
@@ -1506,7 +1511,8 @@ def check_mirror():
                     full_path = Path(d) / "generated" / o[archive]["path"]
                     if full_path.exists():
                         with open(full_path, "rb") as f:
-                            etag = calculate_s3_etag(f, blocksize)
+                            multipart = "-" in o[archive]["etag"]
+                            etag = calculate_s3_etag(f, blocksize, multipart)
                         if etag != o[archive]["etag"]:
                             failure += 1
                             print(
@@ -1514,20 +1520,25 @@ def check_mirror():
                             )
                         else:
                             success += 1
-        if not success:
-            print(f'no file found for {o[archive]["path"]}')
         if failure or not success:
             failures += 1
+        elif not success:
+            failures += 1
+            print(f'no file found for {o[archive]["path"]}')
         else:
             successes += 1
 
-    assert successes + failures == n
-
+    # observed proportion
     p_hat = failures / n
 
+    # standard deviation
     sd = math.sqrt((p * (1 - p)) / n)  # noqa
 
+    # z-score
     z = (p_hat - p) / sd
+
+    # area under the standard Normal curve
+    probability = NormalDist().cdf(z)  # noqa
 
     print(f"From a sample of {n} links:")
     print(f"{successes} successes, {failures} failures")
@@ -1535,3 +1546,4 @@ def check_mirror():
     print(f"Standard deviation is {sd}")
     print(f"Observed proportion is {p_hat}")
     print(f"z-score is {z}")
+    print(f"Chance of this result is {probability*100:.3f}%")
