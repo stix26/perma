@@ -684,7 +684,7 @@ class UserManagementViewsTestCase(PermaTestCase):
         # invalid csv - missing headers
         form2 = initialize_form(invalid_csv_file)
         self.assertFalse(form2.is_valid())
-        self.assertTrue("CSV file must contain first_name, last_name and email header rows."
+        self.assertTrue("CSV file must contain a header row with first_name, last_name and email columns."
                         in form2.errors['csv_file'])
 
         # invalid csv - missing email field
