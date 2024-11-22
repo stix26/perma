@@ -498,7 +498,6 @@ class MultipleUsersFormWithOrganization(ModelForm):
 
         # validate the rows
         seen = set()
-        duplicates = set()
         row_count = 0
 
         for row in reader:
@@ -508,14 +507,12 @@ class MultipleUsersFormWithOrganization(ModelForm):
             if not email:
                 raise forms.ValidationError("Each row in the CSV file must contain email.")
             if email in seen:
-                duplicates.add(email)
+                raise forms.ValidationError("CSV file cannot contain duplicate users.")
             else:
                 seen.add(email)
 
         if row_count == 0:
             raise forms.ValidationError("CSV file must contain at least one user.")
-        if duplicates:
-            raise forms.ValidationError("CSV file cannot contain duplicate users.")
 
         file.seek(0)
         self.cleaned_data['csv_file'] = file
