@@ -387,7 +387,7 @@ td {
 
 // The Basics (Heds)
 
-h1, h2, h3, h4, h5 {
+h1, h2, h3, h4, h5, h6 {
   font-family: $font-hed-alt;
   font-weight: 900;
   line-height: 1.2;
@@ -1296,7 +1296,7 @@ div.col-right {
   &.delete-confirm {
     background-color: $color-error;
     &:hover, &:focus {
-      background-color: $color-black !important;
+      background-color: $color-error !important;
     }
     &:active {
       background-color: $color-error !important;
@@ -2961,6 +2961,10 @@ input[type="file"] {
   padding-top: 0px;
   font-size: 14px;
   line-height: 1ex;
+}
+
+input[type="number"] {
+  width: 160px;
 }
 
 div.checkbox {
@@ -4880,6 +4884,7 @@ h6.image-hed {
   font-size: 16px;
   display: inline-block;
   border-bottom: 2px solid $color-blue;
+  margin-top: $grid * 1.25;
   margin-bottom: $grid * 0;
   padding-top: 0;
   color: $color-blue;

@@ -17,18 +17,26 @@ import string
 import surt
 import tempdir
 import tempfile
+from typing import TypeVar
 from ua_parser import user_agent_parser
 import unicodedata
 from warcio.warcwriter import BufferWARCWriter
 from wsgiref.util import FileWrapper
 
-from django.core.paginator import Paginator, EmptyPage
+from django.core.paginator import Paginator, EmptyPage, Page
 from django.db.models import Q
+from django.db.models.manager import BaseManager
 from django.conf import settings
 from django.core.exceptions import PermissionDenied, ValidationError
 from django.urls import reverse
 from django.core.serializers.json import DjangoJSONEncoder
-from django.http import HttpResponseForbidden, Http404, StreamingHttpResponse, HttpResponse
+from django.http import (
+    HttpRequest,
+    HttpResponseForbidden,
+    Http404,
+    StreamingHttpResponse,
+    HttpResponse,
+)
 from django.contrib.auth.decorators import login_required
 from django.core.files.storage import storages
 from django.utils import timezone
@@ -38,6 +46,8 @@ from .exceptions import InvalidTransmissionException, ScoopAPIException, ScoopAP
 
 logger = logging.getLogger(__name__)
 warn = logger.warn
+
+T = TypeVar('T')
 
 
 def protocol():
@@ -100,13 +110,17 @@ class AlphaNumericValidator:
 
 ### list view helpers ###
 
-def apply_search_query(request, queryset, fields):
+def apply_search_query(
+    request: HttpRequest, queryset: BaseManager[T], fields: list[str]
+) -> tuple[BaseManager[T], str]:
     """
-        For the given `queryset`,
-        apply consecutive .filter()s such that each word
-        in request.GET['q'] appears in one of the `fields`.
+    For the given `queryset`,
+    apply consecutive .filter()s such that each word
+    in parameter 'q' appears in one of the `fields`.
     """
-    search_string = request.GET.get('q', '')
+    # Support either GET or POST request params
+    params = getattr(request, request.method)
+    search_string = params.get('q', '')
     if not search_string:
         return queryset, ''
 
@@ -123,25 +137,37 @@ def apply_search_query(request, queryset, fields):
 
     return queryset, search_string
 
-def apply_sort_order(request, queryset, valid_sorts, default_sort=None):
+def apply_sort_order(
+    request: HttpRequest,
+    queryset: BaseManager[T],
+    valid_sorts: list[str],
+    default_sort: str | None = None,
+) -> tuple[BaseManager[T], str]:
     """
         For the given `queryset`,
         apply sort order based on request.GET['sort'].
     """
     if not default_sort:
         default_sort = valid_sorts[0]
-    sort = request.GET.get('sort', default_sort)
+
+    # Support either GET or POST request params
+    params = getattr(request, request.method)
+
+    sort = params.get('sort', default_sort)
     if sort not in valid_sorts:
         sort = default_sort
     return queryset.order_by(sort), sort
 
-def apply_pagination(request, queryset):
+def apply_pagination(request: HttpRequest, queryset: BaseManager[T]) -> Page:
     """
         For the given `queryset`,
         apply pagination based on request.GET['page'].
     """
+    # Support either GET or POST request params
+    params = getattr(request, request.method)
+
     try:
-        page = max(int(request.GET.get('page', 1)), 1)
+        page = max(int(params.get('page', 1)), 1)
     except ValueError:
         page = 1
     paginator = Paginator(queryset, settings.MAX_USER_LIST_SIZE)
