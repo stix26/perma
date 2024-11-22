@@ -59,6 +59,13 @@ DATABASE_CA_PATH = os.environ.get("DATABASE_CA_PATH", "")
 #
 # Path and artifact settings
 #
+MAX_SUPPORTED_ARCHIVE_FILESIZE = int(os.environ.get("MAX_SUPPORTED_ARCHIVE_FILESIZE", 10**9))
+"""
+    What is the largest archive this application can save and serve without failure? (In bytes).
+    Can be provided via an environment variable.
+    Default: 1GB
+"""
+
 TEMPORARY_STORAGE_EXPIRATION = os.environ.get("TEMPORARY_STORAGE_EXPIRATION", str(60 * 60 * 24))
 """ How long should temporary files be stored for? (In seconds). Can be provided via an environment variable. """  # noqa
 
