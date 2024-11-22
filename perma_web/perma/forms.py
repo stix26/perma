@@ -494,7 +494,7 @@ class MultipleUsersFormWithOrganization(ModelForm):
         # validate the headers
         headers = reader.fieldnames
         if not all(item in headers for item in ['first_name', 'last_name', 'email']):
-            raise forms.ValidationError("CSV file must contain first_name, last_name and email header rows.")
+            raise forms.ValidationError("CSV file must contain a header row with first_name, last_name and email columns.")
 
         # validate the rows
         seen = set()
