@@ -440,34 +440,37 @@ class MultipleUsersFormWithOrganization(ModelForm):
 
     def clean_csv_file(self):
         file = self.cleaned_data['csv_file']
+
+        # check if file is CSV
         if not file.name.endswith('.csv'):
             raise forms.ValidationError("The file must be a CSV.")
 
         file = TextIOWrapper(file, encoding='utf-8')
         reader = csv.DictReader(file)
-        headers = reader.fieldnames
 
+        # validate the headers
+        headers = reader.fieldnames
         if not all(item in headers for item in ['first_name', 'last_name', 'email']):
             raise forms.ValidationError("CSV file must contain first_name, last_name and email header rows.")
 
-        file.seek(0)
-        reader = csv.DictReader(file)
-        if not sum(1 for _ in reader) > 1:
-            raise forms.ValidationError("CSV file must contain at least one user.")
-
+        # validate the rows
         seen = set()
         duplicates = set()
+        row_count = 0
 
-        file.seek(0)
-        reader = csv.DictReader(file)
-        for line in reader:
-            if not line['email']:
+        for row in reader:
+            row_count += 1
+            email = row.get('email')
+            email = email.strip() if email else None
+            if not email:
                 raise forms.ValidationError("Each row in the CSV file must contain email.")
-            elif line['email'] in seen:
-                duplicates.add(line['email'].strip())
+            if email in seen:
+                duplicates.add(email)
             else:
-                seen.add(line['email'].strip())
+                seen.add(email)
 
+        if row_count == 0:
+            raise forms.ValidationError("CSV file must contain at least one user.")
         if duplicates:
             raise forms.ValidationError("CSV file cannot contain duplicate users.")
 
