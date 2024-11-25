@@ -1,6 +1,7 @@
 import logging
 import secrets
 import csv
+import re
 from io import TextIOWrapper
 import string
 from typing import Any, Mapping
@@ -465,9 +466,10 @@ class MultipleUsersFormWithOrganization(ModelForm):
     def __init__(self, request, data=None, files=None, **kwargs):
         super(MultipleUsersFormWithOrganization, self).__init__(data, files, **kwargs)
         self.request = request
-        self.created_users = []
-        self.updated_users = []
-        self.ineligible_users = []
+        self.user_data = {}
+        self.created_users = {}
+        self.updated_users = {}
+        self.ineligible_users = {}
 
         # Filter available organizations based on the current user
         query = self.fields['organizations'].queryset
@@ -504,12 +506,20 @@ class MultipleUsersFormWithOrganization(ModelForm):
             row_count += 1
             email = row.get('email')
             email = email.strip() if email else None
+
             if not email:
                 raise forms.ValidationError("Each row in the CSV file must contain email.")
+            if not re.match(r'^[^\s@]+@[^\s@]+\.[^\s@]+$', email):
+                raise forms.ValidationError("CSV file must contain valid email addresses.")
+
             if email in seen:
                 raise forms.ValidationError("CSV file cannot contain duplicate users.")
             else:
                 seen.add(email)
+                self.user_data[email] = {
+                    'first_name': row.get('first_name', '').strip(),
+                    'last_name': row.get('last_name', '').strip()
+                }
 
         if row_count == 0:
             raise forms.ValidationError("CSV file must contain at least one user.")
@@ -519,70 +529,68 @@ class MultipleUsersFormWithOrganization(ModelForm):
         return file
 
     def save(self, commit=True):
-        csv_file = self.cleaned_data['csv_file']
         expires_at = self.cleaned_data['expires_at']
         organization = self.cleaned_data['organizations']
-        reader = csv.DictReader(csv_file)
 
-        rows = [
-            {
-                'first_name': line.get('first_name', '').strip(),
-                'last_name': line.get('last_name', '').strip(),
-                'email': line.get('email', '').strip(),
-            }
-            for line in reader
-        ]
-
-        emails = [row['email'] for row in rows]
+        emails = set(self.user_data.keys())
         existing_users = LinkUser.objects.filter(email__in=emails)
-        existing_users_dict = {user.email: user for user in existing_users}
-
-        new_users = []
-        created_user_affiliations = []
         updated_user_affiliations = []
 
-        for row in rows:
-            email = row['email']
+        for user in existing_users:
+            if commit:
+                if user.is_staff or user.is_registrar_user():
+                    self.ineligible_users[user.email] = user
+                else:
+                    updated_user_affiliations.append(user)
+                    self.updated_users[user.email] = user
+        
+        new_user_emails = emails - set(self.ineligible_users.keys()) - set(self.updated_users.keys())
+        created_user_affiliations = []
 
-            if email in existing_users_dict:
-                user = existing_users_dict[email]
-                if commit:
-                    if user.is_staff or user.is_registrar_user():
-                        self.ineligible_users.append(user.raw_email)
-                    else:
-                        updated_user_affiliations.append(user)
-                        self.updated_users.append(user)
-            else:
-                new_users.append(
-                    LinkUser(
-                        email=email,
-                        first_name=row['first_name'],
-                        last_name=row['last_name']
+        if new_user_emails and commit:
+            for user in new_user_emails:
+                new_user = LinkUser(
+                        email=user,
+                        first_name=self.user_data[user]['first_name'],
+                        last_name=self.user_data[user]['last_name']
+                    )
+                new_user.save()
+                self.created_users[user] = new_user
+
+                created_user_affiliations.append(
+                    UserOrganizationAffiliation(
+                        user=new_user,
+                        organization=organization,
+                        expires_at=expires_at
                     )
                 )
 
-        if new_users and commit:
-            for user in new_users:
-                user.save()
-            self.created_users.extend(new_users)
+        if commit:
+            # create the affiliations for new users
+            UserOrganizationAffiliation.objects.bulk_create(created_user_affiliations)
 
-            created_user_affiliations.extend([
-                UserOrganizationAffiliation(
-                    user=user,
+            # create or update the affiliations of existing users
+            # affiliations that already exist
+            preexisting_affiliations = (UserOrganizationAffiliation.objects.filter(user__in=updated_user_affiliations,
+                                                                                   organization=organization))
+
+            preexisting_affiliations_set = set(affiliation.user for affiliation in preexisting_affiliations)
+            all_user_affiliations = set(updated_user_affiliations)
+            # new affiliations
+            new_affiliations = all_user_affiliations - preexisting_affiliations_set
+            new_affiliation_objs = []
+
+            for item in new_affiliations:
+                new_affiliation_objs.append(UserOrganizationAffiliation(
+                    user=item,
                     organization=organization,
                     expires_at=expires_at
-                )
-                for user in new_users
-            ])
+                ))
 
-        if commit:
-            UserOrganizationAffiliation.objects.bulk_create(created_user_affiliations)
-            for user in updated_user_affiliations:
-                UserOrganizationAffiliation.objects.update_or_create(
-                    user=user,
-                    organization=organization,
-                    defaults={'expires_at': expires_at}
-                )
+            if preexisting_affiliations:
+                preexisting_affiliations.update(expires_at=expires_at)
+            if new_affiliation_objs:
+                UserOrganizationAffiliation.objects.bulk_create(new_affiliation_objs)
 
         return self
 

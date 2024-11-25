@@ -696,7 +696,7 @@ class UserManagementViewsTestCase(PermaTestCase):
         # --- test user creation ---
         self.assertTrue(form1.is_valid())
         form1.save(commit=True)
-        created_user_ids = [user.id for user in form1.created_users]
+        created_user_ids = [user.id for user in form1.created_users.values()]
         self.assertEqual(len(created_user_ids), 2)
         self.assertEqual(UserOrganizationAffiliation.objects.filter(user_id__in=created_user_ids).count(), 2)
 
@@ -706,9 +706,9 @@ class UserManagementViewsTestCase(PermaTestCase):
         self.assertTrue(form4.is_valid())
         form4.save(commit=True)
         self.assertEqual(len(form4.updated_users), 1)
-        self.assertTrue(existing_user in form4.updated_users)
+        self.assertTrue(existing_user in form4.updated_users.values())
         self.assertEqual(len(form4.created_users), 1)
-        self.assertEqual(form4.updated_users[0].email, "john2doe@example.com")
+        self.assertEqual(next(iter(form4.updated_users)), "john2doe@example.com")
 
         # --- test validation errors ---
         LinkUser.objects.filter(raw_email="johndoe@example.com").update(is_staff=True)
@@ -716,7 +716,7 @@ class UserManagementViewsTestCase(PermaTestCase):
         self.assertTrue(form5.is_valid())
         form5.save(commit=True)
         self.assertEqual(len(form5.ineligible_users), 1)
-        self.assertEqual("johndoe@example.com", form5.ineligible_users[0])
+        self.assertEqual("johndoe@example.com", next(iter(form5.ineligible_users)))
 
     def test_admin_user_can_add_new_user_to_org(self):
         self.log_in_user(self.admin_user)

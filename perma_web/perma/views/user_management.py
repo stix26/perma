@@ -757,12 +757,14 @@ class BaseAddUserToGroup(UpdateView):
             messages.add_message(self.request, level, f'<h4>{title}</h4>{body}', extra_tags='safe')
 
         def send_emails(users, email_function, email_template, extra_context, *args):
-            if email_function == 'email_new_user':
-                for obj in users:
-                    email_new_user(*args, obj, email_template, extra_context)
-            else:
-                for obj in users:
-                    send_user_email(obj.raw_email, email_template, extra_context)
+            for obj in users.values():
+                try:
+                    if email_function == 'email_new_user':
+                        email_new_user(*args, obj, email_template, extra_context)
+                    else:
+                        send_user_email(obj.raw_email, email_template, extra_context)
+                except Exception as e:
+                    logger.exception(f"Failed to send email to {obj.raw_email}: {e}")
 
         context = {'form': form}
 
