@@ -553,7 +553,7 @@ class MultipleUsersFormWithOrganization(ModelForm):
                         email=user,
                         first_name=self.user_data[user]['first_name'],
                         last_name=self.user_data[user]['last_name']
-                    )
+                )
                 new_user.save()
                 self.created_users[user] = new_user
 
