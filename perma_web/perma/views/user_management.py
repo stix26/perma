@@ -1,6 +1,4 @@
-import csv
 import logging
-from typing import Literal
 
 from django.conf import settings
 from django.contrib import messages
@@ -56,6 +54,7 @@ from perma.utils import (
     apply_pagination,
     apply_search_query,
     apply_sort_order,
+    export_queryset,
     get_form_data,
     ratelimit_ip_key,
     user_passes_test_or_403,
@@ -326,21 +325,13 @@ def manage_sponsored_user_export_user_list(request: HttpRequest) -> HttpResponse
         sponsorship_status=F('sponsorships__status'),
         sponsorship_created_at=F('sponsorships__created_at'),
     ).values(*field_names)
+    filename = 'perma-sponsored-users'
 
     # Export records in appropriate format based on `format` URL parameter
-    export_format: Literal['csv', 'json'] = request.GET.get('format', 'csv').casefold()
-    match export_format:
-        case 'json':
-            response = JsonResponse(list(users), safe=False)
-        case 'csv' | _:
-            response = HttpResponse(
-                content_type='text/csv',
-                headers={'Content-Disposition': 'attachment; filename="perma-sponsored-users.csv"'},
-            )
-            writer = csv.DictWriter(response, fieldnames=field_names)
-            writer.writeheader()
-            for user in users:
-                writer.writerow(user)
+    export_format = request.GET.get('format', '').casefold()
+    if export_format not in ['csv', 'json']:
+        export_format = 'csv'
+    response = export_queryset(users, export_format, field_names, filename)
     return response
 
 
@@ -376,6 +367,33 @@ def manage_single_user_reactivate(request, user_id):
 def manage_organization_user(request):
     return list_users_in_group(request, 'organization_user')
 
+
+@user_passes_test_or_403(
+    lambda user: user.is_staff or user.is_registrar_user() or user.is_organization_user
+)
+def manage_organization_user_export_user_list(request: HttpRequest):
+    """Return a file listing users across organizations."""
+    # Get query results via list_sponsored_users
+    field_names = [
+        'email',
+        'first_name',
+        'last_name',
+        'date_joined',
+        'last_login',
+        'organization_name',
+    ]
+    records = list_users_in_group(request, 'organization_user', export=True)
+    org_users = records.annotate(organization_name=F('organizations__name')).values(*field_names)
+    filename = 'perma-organization-users'
+
+    # Export records in appropriate format based on `format` URL parameter
+    export_format = request.GET.get('format', '').casefold()
+    if export_format not in ['csv', 'json']:
+        export_format = 'csv'
+    response = export_queryset(org_users, export_format, field_names, filename)
+    return response
+
+
 @user_passes_test_or_403(lambda user: user.is_staff or user.is_registrar_user() or user.is_organization_user)
 def manage_single_organization_user(request, user_id):
     return edit_user_in_group(request, user_id, 'organization_user')
@@ -400,35 +418,32 @@ def manage_single_organization_export_user_list(
     if not request.user.can_edit_organization(target_org):
         return HttpResponseForbidden()
 
+    # Generate output records from query results and add organization name
+    field_names = [
+        'email',
+        'first_name',
+        'last_name',
+        'date_joined',
+        'last_login',
+        'organization_name',
+    ]
     org_users = (
         LinkUser.objects.filter(organizations__id=org_id)
         .annotate(organization_name=F('organizations__name'))
-        .values('email', 'first_name', 'last_name', 'organization_name')
+        .values(*field_names)
     )
-    filename_stem = f'perma-organization-{org_id}-users'
-
-    # Generate output records from query results and add organization name
-    field_names = ['email', 'first_name', 'last_name', 'organization_name']
+    filename = f'perma-organization-{org_id}-users'
 
     # Export records in appropriate format based on `format` URL parameter
-    export_format: Literal['csv', 'json'] = request.GET.get('format', 'csv').casefold()
-    match export_format:
-        case 'json':
-            response = JsonResponse(list(org_users), safe=False)
-        case 'csv' | _:
-            response = HttpResponse(
-                content_type='text/csv',
-                headers={'Content-Disposition': f'attachment; filename="{filename_stem}.csv"'},
-            )
-            writer = csv.DictWriter(response, fieldnames=field_names)
-            writer.writeheader()
-            for org_user in org_users:
-                writer.writerow(org_user)
+    export_format = request.GET.get('format', '').casefold()
+    if export_format not in ['csv', 'json']:
+        export_format = 'csv'
+    response = export_queryset(org_users, export_format, field_names, filename)
     return response
 
 
 @user_passes_test_or_403(lambda user: user.is_staff or user.is_registrar_user() or user.is_organization_user)
-def list_users_in_group(request, group_name):
+def list_users_in_group(request: HttpRequest, group_name: str, export: bool = False):
     """
         Show list of users with given group name.
     """
@@ -513,6 +528,10 @@ def list_users_in_group(request, group_name):
     sponsorship_status = request.GET.get('sponsorship_status', '')
     if sponsorship_status:
         users = users.filter(sponsorships__status=sponsorship_status)
+
+    # if exporting records (e.g. for CSV or JSON output), return query manager directly
+    if export is True:
+        return users
 
     # get total counts
     active_users = users.filter(is_active=True, is_confirmed=True).count()
