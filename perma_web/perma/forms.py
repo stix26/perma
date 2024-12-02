@@ -513,11 +513,11 @@ class MultipleUsersFormWithOrganization(ModelForm):
             email_validator = EmailValidator()
             try:
                 email_validator(email)
-            except ValidationError as e:
+            except ValidationError:
                 raise forms.ValidationError(f"CSV file contains invalid email address: {email}")
 
             if email in seen:
-                raise forms.ValidationError("CSV file cannot contain duplicate users.")
+                raise forms.ValidationError(f"CSV file cannot contain duplicate users: {email}")
             else:
                 seen.add(email)
                 self.user_data[email] = {
