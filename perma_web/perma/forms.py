@@ -505,7 +505,7 @@ class MultipleUsersFormWithOrganization(ModelForm):
         for row in reader:
             row_count += 1
             email = row.get('email')
-            email = email.strip() if email else None
+            email = email.strip().lower() if email else None
 
             if not email:
                 raise forms.ValidationError("Each row in the CSV file must contain email.")
