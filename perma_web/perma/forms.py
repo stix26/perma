@@ -1,7 +1,6 @@
 import logging
 import secrets
 import csv
-import re
 from io import TextIOWrapper
 import string
 from typing import Any, Mapping
@@ -11,6 +10,7 @@ from django import forms
 from django.conf import settings
 from django.contrib.auth.forms import SetPasswordForm
 from django.core.exceptions import ObjectDoesNotExist, ValidationError
+from django.core.validators import EmailValidator
 from django.db.models.fields import BLANK_CHOICE_DASH
 from django.forms import Form, ModelForm
 from django.http import HttpRequest, HttpResponseRedirect
@@ -509,8 +509,12 @@ class MultipleUsersFormWithOrganization(ModelForm):
 
             if not email:
                 raise forms.ValidationError("Each row in the CSV file must contain email.")
-            if not re.match(r'^[^\s@]+@[^\s@]+\.[^\s@]+$', email):
-                raise forms.ValidationError("CSV file must contain valid email addresses.")
+
+            email_validator = EmailValidator()
+            try:
+                email_validator(email)
+            except ValidationError as e:
+                raise forms.ValidationError(f"CSV file contains invalid email address: {email}")
 
             if email in seen:
                 raise forms.ValidationError("CSV file cannot contain duplicate users.")
