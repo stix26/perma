@@ -769,8 +769,9 @@ class BaseAddUserToGroup(UpdateView):
         context = {'form': form}
 
         if not self.is_batch:
+            user = {self.object.email: self.object}
             if self.is_new:
-                send_emails([self.object], 'email_new_user', self.user_added_email_template, context, self.request)
+                send_emails(user, 'email_new_user', self.user_added_email_template, context, self.request)
                 add_message(
                     messages.SUCCESS,
                     "Account created!",
@@ -778,7 +779,7 @@ class BaseAddUserToGroup(UpdateView):
                 )
             else:
                 send_emails(
-                    [self.object],
+                    user,
                     'send_user_email',
                     self.confirmation_email_template,
                     {
