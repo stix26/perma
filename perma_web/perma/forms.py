@@ -552,14 +552,14 @@ class MultipleUsersFormWithOrganization(ModelForm):
         created_user_affiliations = []
 
         if new_user_emails and commit:
-            for user in new_user_emails:
+            for email in new_user_emails:
                 new_user = LinkUser(
-                        email=user,
-                        first_name=self.user_data[user]['first_name'],
-                        last_name=self.user_data[user]['last_name']
+                        email=email,
+                        first_name=self.user_data[email]['first_name'],
+                        last_name=self.user_data[email]['last_name']
                 )
                 new_user.save()
-                self.created_users[user] = new_user
+                self.created_users[email] = new_user
 
                 created_user_affiliations.append(
                     UserOrganizationAffiliation(
