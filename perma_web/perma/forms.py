@@ -505,7 +505,7 @@ class MultipleUsersFormWithOrganization(ModelForm):
         for row in reader:
             row_count += 1
             email = row.get('email')
-            email = email.strip().lower() if email else None
+            email = email.strip() if email else None
 
             if not email:
                 raise forms.ValidationError("Each row in the CSV file must contain email.")
@@ -536,8 +536,10 @@ class MultipleUsersFormWithOrganization(ModelForm):
         expires_at = self.cleaned_data['expires_at']
         organization = self.cleaned_data['organizations']
 
-        emails = set(self.user_data.keys())
-        existing_users = LinkUser.objects.filter(email__in=emails)
+        raw_emails = set(self.user_data.keys())
+        # lower casing the emails to feed into the filter query in order to prevent duplicate user creation
+        lower_case_emails = {email.lower() for email in self.user_data.keys()}
+        existing_users = LinkUser.objects.filter(email__in=lower_case_emails)
         updated_user_affiliations = []
 
         for user in existing_users:
@@ -547,16 +549,18 @@ class MultipleUsersFormWithOrganization(ModelForm):
                 else:
                     updated_user_affiliations.append(user)
                     self.updated_users[user.email] = user
-        
-        new_user_emails = emails - set(self.ineligible_users.keys()) - set(self.updated_users.keys())
+
+        new_user_emails = lower_case_emails - set(self.ineligible_users.keys()) - set(self.updated_users.keys())
+
         created_user_affiliations = []
 
         if new_user_emails and commit:
             for email in new_user_emails:
+                raw_email = next((raw_email for raw_email in raw_emails if raw_email.lower() == email.lower()), None)
                 new_user = LinkUser(
-                        email=email,
-                        first_name=self.user_data[email]['first_name'],
-                        last_name=self.user_data[email]['last_name']
+                        email=raw_email,
+                        first_name=self.user_data[raw_email]['first_name'],
+                        last_name=self.user_data[raw_email]['last_name']
                 )
                 new_user.save()
                 self.created_users[email] = new_user
