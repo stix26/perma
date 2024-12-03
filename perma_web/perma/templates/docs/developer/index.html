@@ -99,7 +99,7 @@ Welcome to the Perma.cc developer guide.
 
     <pre>wget {{ base_url }}/public/archives/Y6JJ-TDUJ/download?file_format=wacz</pre>
     <p>or</p>
-    <pre>curl -o your_favorite_filename.warc.gz {{ base_url }}/public/archives/Y6JJ-TDUJ/download?file_format=wacz</pre>
+    <pre>curl -o your_favorite_filename.wacz {{ base_url }}/public/archives/Y6JJ-TDUJ/download?file_format=wacz</pre>
 
     </div>
   </div>
@@ -216,7 +216,7 @@ curl -H "Authorization: ApiKey {{ request.user.get_api_key | default:'your-api-k
 
       <pre>wget --header "Authorization: ApiKey {{ request.user.get_api_key | default:'your-api-key'}}" {{ base_url }}/archives/Y6JJ-TDUJ/download?file_format=wacz</pre>
       <p>or</p>
-      <pre>curl -H "Authorization: ApiKey {{ request.user.get_api_key | default:'your-api-key'}}" -o your_favorite_filename.warc.gz {{ base_url }}/archives/Y6JJ-TDUJ/download?file_format=wacz</pre>
+      <pre>curl -H "Authorization: ApiKey {{ request.user.get_api_key | default:'your-api-key'}}" -o your_favorite_filename.wacz {{ base_url }}/archives/Y6JJ-TDUJ/download?file_format=wacz</pre>
 
       <h3 id="move-to-dark-archive" class="body-bh">Make an archive private</h3>
       <p class="body-text">Use PATCH to make an archive private.</p>
