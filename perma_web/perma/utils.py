@@ -623,9 +623,32 @@ def stream_warc(link, stream=True):
         raise Http404
     return get_warc_stream(link, stream)
 
+
 def stream_warc_if_permissible(link, user, stream=True):
     if user.can_view(link):
         return stream_warc(link, stream)
+    return HttpResponseForbidden('Private archive.')
+
+
+def stream_wacz(link, stream=True):
+    # `link.user_deleted` is checked here for dev convenience:
+    # it's easy to forget that deleted links/waczs aren't truly deleted,
+    # and easy to accidentally permit the downloading of "deleted" waczs.
+    # Users of stream_wacz shouldn't have to worry about / remember this.
+    if link.user_deleted or not link.can_play_back():
+        raise Http404
+    with link.get_wacz() as wacz_file:
+        if stream:
+            response = StreamingHttpResponse(wacz_file, content_type="application/wacz")
+        else:
+            response = HttpResponse(wacz_file, content_type="application/wacz")
+        response['Content-Disposition'] = f'attachment; filename="{link.guid}.wacz"'
+        return response
+
+
+def stream_wacz_if_permissible(link, user, stream=True):
+    if user.can_view(link):
+        return stream_wacz(link, stream)
     return HttpResponseForbidden('Private archive.')
 
 
