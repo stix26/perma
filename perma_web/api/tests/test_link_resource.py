@@ -185,6 +185,18 @@ class LinkResourceTestCase(LinkResourceTestMixin, ApiResourceTestCase):
     def test_public_download_unsupported_format(self):
         self.rejected_get(f"{self.public_link_download_url}?file_format=asdf", expected_status_code=400)
 
+    @patch('perma.models.Link.get_warc', autospec=True)
+    def test_download_nonexistent_warc(self, get_warc):
+        get_warc.side_effect = RuntimeError
+        self.rejected_get(self.public_link_download_url, expected_status_code=404)
+        self.assertEqual(get_warc.call_count, 1)
+
+    @patch('perma.models.Link.get_wacz', autospec=True)
+    def test_download_nonexistent_wacz(self, get_wacz):
+        get_wacz.side_effect = RuntimeError
+        self.rejected_get(f"{self.public_link_download_url}?file_format=wacz", expected_status_code=404)
+        self.assertEqual(get_wacz.call_count, 1)
+
     def test_private_download_at_public_url(self):
         self.rejected_get(self.public_link_download_url_for_private_link, expected_status_code=404)
 

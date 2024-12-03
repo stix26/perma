@@ -632,13 +632,18 @@ def stream_archive(link, stream=True, file_format='warc'):
     if link.user_deleted or not link.can_play_back():
         raise Http404
 
-    match file_format:
-        case 'warc':
-            return get_warc_stream(link, stream)
-        case 'wacz':
-            return get_wacz_stream(link, stream)
-        case _:
-            raise NotImplementedError("Unsupported file format.")
+    try:
+        match file_format:
+            case 'warc':
+                return get_warc_stream(link, stream)
+            case 'wacz':
+                return get_wacz_stream(link, stream)
+            case _:
+                raise NotImplementedError("Unsupported file format.")
+    except RuntimeError:
+        # If the requested format is not available, return 404
+        # just like with deleted and failed Perma Links
+        raise Http404
 
 
 def stream_archive_if_permissible(link, user, stream=True, file_format='warc'):
