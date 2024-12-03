@@ -9,7 +9,7 @@ from django.http import Http404
 from django.urls import resolve, reverse
 from django.urls.exceptions import NoReverseMatch
 from rest_framework import serializers
-from rest_framework.exceptions import PermissionDenied
+from rest_framework.exceptions import PermissionDenied, ValidationError
 from rest_framework.pagination import LimitOffsetPagination
 from rest_framework.response import Response
 from rest_framework.reverse import reverse as drf_reverse
