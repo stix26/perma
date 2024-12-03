@@ -163,7 +163,7 @@ class LinkResourceTestCase(LinkResourceTestMixin, ApiResourceTestCase):
     def test_get_detail_json(self):
         self.successful_get(self.public_link_detail_url, fields=self.logged_out_fields)
 
-    @patch('api.views.stream_warc', autospec=True)
+    @patch('api.views.stream_archive', autospec=True)
     def test_public_download(self, stream):
         stream.return_value = StreamingHttpResponse(StringIO("warc placeholder"))
         resp = self.api_client.get(self.public_link_download_url)
@@ -194,7 +194,7 @@ class LinkResourceTestCase(LinkResourceTestMixin, ApiResourceTestCase):
         self.assertEqual(resp.status_code, 302)
         self.assertEqual(resp.url, self.replaced_link_authed_download_redirect_target)
 
-    @patch('perma.utils.stream_warc', autospec=True)
+    @patch('perma.utils.stream_archive', autospec=True)
     def test_private_download(self, stream):
         stream.return_value = StreamingHttpResponse(StringIO("warc placeholder"))
         self.api_client.force_authenticate(user=self.regular_user)

@@ -613,30 +613,7 @@ def get_warc_stream(link, stream=True):
         response['Content-Disposition'] = f'attachment; filename="{filename}"'
         return response
 
-
-def stream_warc(link, stream=True):
-    # `link.user_deleted` is checked here for dev convenience:
-    # it's easy to forget that deleted links/warcs aren't truly deleted,
-    # and easy to accidentally permit the downloading of "deleted" warcs.
-    # Users of stream_warc shouldn't have to worry about / remember this.
-    if link.user_deleted or not link.can_play_back():
-        raise Http404
-    return get_warc_stream(link, stream)
-
-
-def stream_warc_if_permissible(link, user, stream=True):
-    if user.can_view(link):
-        return stream_warc(link, stream)
-    return HttpResponseForbidden('Private archive.')
-
-
-def stream_wacz(link, stream=True):
-    # `link.user_deleted` is checked here for dev convenience:
-    # it's easy to forget that deleted links/waczs aren't truly deleted,
-    # and easy to accidentally permit the downloading of "deleted" waczs.
-    # Users of stream_wacz shouldn't have to worry about / remember this.
-    if link.user_deleted or not link.can_play_back():
-        raise Http404
+def get_wacz_stream(link, stream=True):
     with link.get_wacz() as wacz_file:
         if stream:
             response = StreamingHttpResponse(wacz_file, content_type="application/wacz")
@@ -646,9 +623,26 @@ def stream_wacz(link, stream=True):
         return response
 
 
-def stream_wacz_if_permissible(link, user, stream=True):
+def stream_archive(link, stream=True, file_format='warc'):
+    # `link.user_deleted` is checked here for dev convenience:
+    # it's easy to forget that deleted Perma Links' files aren't truly deleted,
+    # and easy to accidentally permit the downloading of "deleted" archive files.
+    # Users of stream_archive shouldn't have to worry about / remember this.
+    if link.user_deleted or not link.can_play_back():
+        raise Http404
+
+    match file_format:
+        case 'warc':
+            return get_warc_stream(link, stream)
+        case 'wacz':
+            return get_wacz_stream(link, stream)
+        case _:
+            raise NotImplementedError("Unsupported file format.")
+
+
+def stream_archive_if_permissible(link, user, stream=True, file_format='warc'):
     if user.can_view(link):
-        return stream_wacz(link, stream)
+        return stream_archive(link, stream, file_format)
     return HttpResponseForbidden('Private archive.')
 
 

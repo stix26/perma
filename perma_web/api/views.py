@@ -14,7 +14,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 import surt
 
-from perma.utils import stream_warc, stream_warc_if_permissible
+from perma.utils import stream_archive, stream_archive_if_permissible
 from perma.celery_tasks import run_next_capture
 from perma.models import Folder, CaptureJob, Link, Capture, Organization, LinkBatch
 
@@ -355,7 +355,7 @@ class PublicLinkDownloadView(BaseView):
             raise Http404
         if link.replacement_link_id:
             return HttpResponseRedirect(reverse_api_view_relative('public_archives_download', kwargs={'guid': link.replacement_link_id}))
-        return stream_warc(link)
+        return stream_archive(link, file_format='warc')
 
 
 # /archives
@@ -668,7 +668,7 @@ class AuthenticatedLinkDownloadView(BaseView):
         link = self.get_object_for_user_by_pk(request.user, guid)
         if link.replacement_link_id:
             return HttpResponseRedirect(reverse_api_view_relative('archives_download', kwargs={'guid': link.replacement_link_id}))
-        return stream_warc_if_permissible(link, request.user)
+        return stream_archive_if_permissible(link, request.user, file_format='warc')
 
 
 # /folders/:parent_id/archives/:guid

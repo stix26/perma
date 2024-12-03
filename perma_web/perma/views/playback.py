@@ -14,8 +14,7 @@ from perma.celery_tasks import convert_warc_to_wacz
 from perma.models import Link
 from perma.utils import (if_anonymous, ratelimit_ip_key,
     memento_url, timemap_url, timegate_url,
-    protocol, remove_control_characters, stream_warc_if_permissible,
-    stream_wacz_if_permissible)
+    protocol, remove_control_characters, stream_archive_if_permissible)
 
 import logging
 
@@ -60,11 +59,11 @@ def single_permalink(request, guid):
 
     # serve raw WARC
     if serve_type == 'warc_download':
-        return stream_warc_if_permissible(link, request.user)
+        return stream_archive_if_permissible(link, request.user, file_format='warc')
 
     # serve raw WACZ
     if serve_type == 'wacz_download':
-        return stream_wacz_if_permissible(link, request.user)
+        return stream_archive_if_permissible(link, request.user, file_format='wacz')
 
     # handle requested capture type
     if serve_type == 'image':
