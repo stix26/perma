@@ -250,3 +250,21 @@ def get_download_file_format(request):
             "file_format": f"The specified format is not supported. Options: {', '.join(supported_formats)}."
         })
     return file_format
+
+
+def get_download_url(request, link, file_format='warc', public=True):
+    view_name = f"{'public_' if public else ''}archives_download"
+    match file_format:
+        case 'warc':
+            if link.warc_size or link.wacz_size:
+                return reverse_api_view(view_name, kwargs={'guid': link.guid}, request=request)
+            return None
+        case 'wacz':
+            if link.wacz_size:
+                base_url = reverse_api_view('public_archives_download', kwargs={'guid': link.guid}, request=request)
+                return f"{base_url}?file_format=wacz"
+            return None
+        case _:
+            raise NotImplementedError("Unsupported file format.")
+
+

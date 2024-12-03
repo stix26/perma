@@ -9,7 +9,7 @@ from perma.exceptions import ScoopAPIException
 from perma.models import LinkUser, Folder, CaptureJob, Capture, Link, Organization, LinkBatch
 from perma.utils import send_to_scoop
 
-from .utils import get_mime_type, mime_type_lookup, reverse_api_view
+from .utils import get_mime_type, mime_type_lookup, reverse_api_view, get_download_url
 
 import logging
 logger = logging.getLogger(__name__)
@@ -183,10 +183,24 @@ class LinkSerializer(BaseSerializer):
     queue_time = serializers.SerializerMethodField()
     capture_time = serializers.SerializerMethodField()
     warc_download_url = serializers.SerializerMethodField()
+    wacz_download_url = serializers.SerializerMethodField()
 
     class Meta:
         model = Link
-        fields = ('guid', 'creation_timestamp', 'url', 'title', 'description', 'warc_size', 'warc_download_url', 'captures', 'queue_time', 'capture_time')
+        fields = (
+            'guid',
+            'creation_timestamp',
+            'url',
+            'title',
+            'description',
+            'warc_size',
+            'warc_download_url',
+            'wacz_size',
+            'wacz_download_url',
+            'captures',
+            'queue_time',
+            'capture_time'
+        )
 
     def get_queue_time(self, link):
         try:
@@ -203,9 +217,10 @@ class LinkSerializer(BaseSerializer):
             return None
 
     def get_warc_download_url(self, link):
-        if link.warc_size:
-            return reverse_api_view('public_archives_download', kwargs={'guid': link.guid}, request=self.context['request'])
-        return None
+        return get_download_url(self.context['request'], link, file_format='warc', public=True)
+
+    def get_wacz_download_url(self, link):
+        return get_download_url(self.context['request'], link, file_format='wacz', public=True)
 
 
 class AuthenticatedLinkSerializer(LinkSerializer):
@@ -220,9 +235,10 @@ class AuthenticatedLinkSerializer(LinkSerializer):
         allowed_update_fields = ['submitted_title', 'submitted_description', 'notes', 'is_private', 'private_reason', 'default_to_screenshot_view']
 
     def get_warc_download_url(self, link):
-        if link.warc_size:
-            return reverse_api_view('archives_download', kwargs={'guid': link.guid}, request=self.context['request'])
-        return None
+        return get_download_url(self.context['request'], link, file_format='warc', public=False)
+
+    def get_wacz_download_url(self, link):
+        return get_download_url(self.context['request'], link, file_format='wacz', public=False)
 
     def validate_url(self, url):
         # Clean up the user submitted url

@@ -81,6 +81,8 @@ class LinkResourceTestMixin():
             'captures',
             'warc_size',
             'warc_download_url',
+            'wacz_size',
+            'wacz_download_url',
             'queue_time',
             'capture_time',
         ]
