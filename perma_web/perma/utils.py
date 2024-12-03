@@ -615,10 +615,11 @@ def get_warc_stream(link, stream=True):
 
 def get_wacz_stream(link, stream=True):
     with link.get_wacz() as wacz_file:
+        wacz_stream = FileWrapper(wacz_file)
         if stream:
-            response = StreamingHttpResponse(wacz_file, content_type="application/wacz")
+            response = StreamingHttpResponse(wacz_stream, content_type="application/wacz")
         else:
-            response = HttpResponse(wacz_file, content_type="application/wacz")
+            response = HttpResponse(wacz_stream, content_type="application/wacz")
         response['Content-Disposition'] = f'attachment; filename="{link.guid}.wacz"'
         return response
 
