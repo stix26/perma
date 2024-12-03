@@ -240,3 +240,13 @@ def dispatch_multiple_requests(request, call_list, custom_request_attributes=Non
             'data': response.data
         })
     return responses
+
+
+def get_download_file_format(request):
+    file_format = request.query_params.get('file_format', 'warc')
+    supported_formats = ['warc', 'wacz']
+    if file_format not in supported_formats:
+        raise ValidationError({
+            "file_format": f"The specified format is not supported. Options: {', '.join(supported_formats)}."
+        })
+    return file_format

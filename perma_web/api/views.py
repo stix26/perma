@@ -20,7 +20,7 @@ from perma.models import Folder, CaptureJob, Link, Capture, Organization, LinkBa
 
 from .utils import TastypiePagination, load_parent, raise_general_validation_error, \
     raise_invalid_capture_job, dispatch_multiple_requests, reverse_api_view_relative, \
-    url_is_invalid_unicode
+    url_is_invalid_unicode, get_download_file_format
 from .serializers import FolderSerializer, CaptureJobSerializer, LinkSerializer, AuthenticatedLinkSerializer, \
     LinkUserSerializer, OrganizationSerializer, LinkBatchSerializer, DetailedLinkBatchSerializer
 from django.conf import settings
@@ -353,9 +353,14 @@ class PublicLinkDownloadView(BaseView):
             link = Link.objects.discoverable().get(pk=guid)
         except Link.DoesNotExist:
             raise Http404
+
+        file_format = get_download_file_format(request)
+
         if link.replacement_link_id:
-            return HttpResponseRedirect(reverse_api_view_relative('public_archives_download', kwargs={'guid': link.replacement_link_id}))
-        return stream_archive(link, file_format='warc')
+            base_url = reverse_api_view_relative('public_archives_download', kwargs={'guid': link.replacement_link_id})
+            return HttpResponseRedirect(f"{base_url}?file_format={file_format}")
+
+        return stream_archive(link, file_format=file_format)
 
 
 # /archives
@@ -666,9 +671,11 @@ class AuthenticatedLinkDownloadView(BaseView):
     def get(self, request, guid, format=None):
         """ Download warc. """
         link = self.get_object_for_user_by_pk(request.user, guid)
+        file_format = get_download_file_format(request)
         if link.replacement_link_id:
-            return HttpResponseRedirect(reverse_api_view_relative('archives_download', kwargs={'guid': link.replacement_link_id}))
-        return stream_archive_if_permissible(link, request.user, file_format='warc')
+            base_url = reverse_api_view_relative('archives_download', kwargs={'guid': link.replacement_link_id})
+            return HttpResponseRedirect(f"{base_url}?file_format={file_format}")
+        return stream_archive_if_permissible(link, request.user, file_format=file_format)
 
 
 # /folders/:parent_id/archives/:guid

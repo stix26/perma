@@ -67,9 +67,9 @@ class LinkResourceTestMixin():
         self.public_link_download_url_for_private_link = reverse('api:public_archives_download', args=[self.unrelated_private_link.pk])
 
         self.replaced_link_public_download_url = reverse('api:public_archives_download', args=['ABCD-0006'])
-        self.replaced_link_public_download_redirect_target = reverse('api:public_archives_download', args=['3SLN-JHX9'])
+        self.replaced_link_public_download_redirect_target = f"{reverse('api:public_archives_download', args=['3SLN-JHX9'])}?file_format=warc"
         self.replaced_link_authed_download_url = reverse('api:archives_download', args=['ABCD-0006'])
-        self.replaced_link_authed_download_redirect_target = reverse('api:archives_download', args=['3SLN-JHX9'])
+        self.replaced_link_authed_download_redirect_target = f"{reverse('api:archives_download', args=['3SLN-JHX9'])}?file_format=warc"
         self.replaced_link_owner = LinkUser.objects.get(id=4)
 
         self.logged_out_fields = [
