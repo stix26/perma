@@ -9,7 +9,7 @@ from perma.exceptions import ScoopAPIException
 from perma.models import LinkUser, Folder, CaptureJob, Capture, Link, Organization, LinkBatch
 from perma.utils import send_to_scoop
 
-from .utils import get_mime_type, mime_type_lookup, reverse_api_view, get_download_url
+from .utils import get_mime_type, mime_type_lookup, get_download_url
 
 import logging
 logger = logging.getLogger(__name__)

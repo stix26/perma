@@ -8,7 +8,6 @@ from requests import request as orig_request
 
 from django.conf import settings
 from django.urls import reverse
-from django.http import StreamingHttpResponse
 from django.test.utils import override_settings
 
 from mock import patch
