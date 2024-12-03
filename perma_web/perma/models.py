@@ -2040,7 +2040,7 @@ class Link(DeletableModel):
     @contextmanager
     def get_wacz(self):
         if not self.wacz_size:
-            raise RuntimeError(f'No WARC present for {self.guid}')
+            raise RuntimeError(f'No WACZ present for {self.guid}')
         yield storages[settings.WACZ_STORAGE].open(self.wacz_storage_file(), 'rb')
 
     def accessible_to(self, user):
