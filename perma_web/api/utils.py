@@ -261,7 +261,7 @@ def get_download_url(request, link, file_format='warc', public=True):
             return None
         case 'wacz':
             if link.wacz_size:
-                base_url = reverse_api_view('public_archives_download', kwargs={'guid': link.guid}, request=request)
+                base_url = reverse_api_view(view_name, kwargs={'guid': link.guid}, request=request)
                 return f"{base_url}?file_format=wacz"
             return None
         case _:
