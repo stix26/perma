@@ -8674,7 +8674,7 @@ figcaption + .img-responsive {
   border-color: transparent;
 }
 
-.alert-success, .alert-info {
+.alert-success, .alert-info, .alert-error {
   color: #77AE3A;
   background-color: white;
   border: 2px solid #77AE3A;
@@ -8685,7 +8685,7 @@ figcaption + .img-responsive {
   font-family: "Roboto", Helvetica, Arial, "Lucida Grande", sans-serif;
   text-align: center;
 }
-.alert-success a, .alert-success p a.perma, p .alert-success a.perma, .alert-info a, .alert-info p a.perma, p .alert-info a.perma {
+.alert-success a, .alert-success p a.perma, p .alert-success a.perma, .alert-info a, .alert-info p a.perma, p .alert-info a.perma, .alert-error a, .alert-error p a.perma, p .alert-error a.perma {
   font-weight: 700;
   display: inline-block;
   padding: 4px 5px 2px;
@@ -8698,17 +8698,25 @@ figcaption + .img-responsive {
   top: -1px;
   margin-left: 3px;
 }
-.alert-success a:hover, .alert-success p a.perma:hover, p .alert-success a.perma:hover, .alert-info a:hover, .alert-info p a.perma:hover, p .alert-info a.perma:hover {
+.alert-success a:hover, .alert-success p a.perma:hover, p .alert-success a.perma:hover, .alert-info a:hover, .alert-info p a.perma:hover, p .alert-info a.perma:hover, .alert-error a:hover, .alert-error p a.perma:hover, p .alert-error a.perma:hover {
   background-color: #222;
 }
-.alert-success h4, .alert-info h4 {
+.alert-success h4, .alert-info h4, .alert-error h4 {
   color: #77AE3A;
   font-weight: 700;
   padding-bottom: 8px;
 }
 
+.alert-error {
+  color: #E50000;
+  border: 2px solid #E50000;
+}
+.alert-error h4 {
+  color: #E50000;
+}
+
 .alert-block {
-  margin: 16px 0 32px;
+  margin: 48px 0 32px;
 }
 
 .close-browser-tools {
@@ -11046,6 +11054,20 @@ p a.action-heading.perma [class*=" icon-"] {
   right: 0;
 }
 
+.bulk-users {
+  position: absolute;
+  top: 50px;
+  right: 22px;
+  font-size: 16px;
+  font-weight: 200;
+}
+
+.bulk-users a, .bulk-users p a.perma, p .bulk-users a.perma {
+  color: #2D76EE;
+  text-decoration: underline;
+  font-weight: normal;
+}
+
 .org-settings {
   margin-top: 16px;
 }
@@ -11089,16 +11111,17 @@ p a.action-heading.perma [class*=" icon-"] {
 
 #add-member {
   padding-bottom: 0;
+  margin-top: 50px;
 }
 
 .admin-data {
-  margin: 24px 0 0;
+  margin: 48px 0 0;
   border-top: 1px solid #2D76EE;
   padding-top: 1px;
 }
 @media only screen and (min-width: 768px) {
   .admin-data {
-    margin: 24px 0;
+    margin: 48px 0;
   }
 }
 

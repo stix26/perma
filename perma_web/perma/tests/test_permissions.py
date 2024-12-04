@@ -94,6 +94,7 @@ def test_permissions(client, admin_user, registrar_user, org_user, link_user_fac
                 ['user_management_manage_organization_user_export_user_list'],
                 ['user_management_manage_organization'],
                 ['user_management_organization_user_add_user'],
+                ['user_management_organization_user_add_multiple_users']
             ],
             'allowed': {admin_user, registrar_user, org_user_registrar_user, sponsored_user_registrar_user, org_user},
         },

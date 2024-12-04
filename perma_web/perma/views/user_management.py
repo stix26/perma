@@ -38,6 +38,7 @@ from perma.forms import (
     UserForm,
     UserFormWithAdmin,
     UserFormWithOrganization,
+    MultipleUsersFormWithOrganization,
     UserFormWithRegistrar,
     UserFormWithSponsoringRegistrar,
 )
@@ -61,6 +62,7 @@ from perma.utils import (
 )
 from perma.views.common import valid_member_sorts, valid_org_sorts, valid_registrar_sorts
 from perma.views.user_sign_up import email_new_user
+from waffle import flag_is_active
 
 logger = logging.getLogger(__name__)
 
@@ -554,13 +556,14 @@ def list_users_in_group(request: HttpRequest, group_name: str, export: bool = Fa
         'orgs': orgs,
         'total_created_links_count': total_created_links_count,
         'registrars': registrars,
-        'group_name':group_name,
-        'pretty_group_name':group_name.replace('_', ' ').capitalize(),
-        'user_list_url':f'user_management_manage_{group_name}',
-        'reactivate_user_url':f'user_management_manage_single_{group_name}_reactivate',
-        'single_user_url':f'user_management_manage_single_{group_name}',
-        'delete_user_url':f'user_management_manage_single_{group_name}_delete',
-        'add_user_url':f'user_management_{group_name}_add_user',
+        'group_name': group_name,
+        'pretty_group_name': group_name.replace('_', ' ').capitalize(),
+        'user_list_url': f'user_management_manage_{group_name}',
+        'reactivate_user_url': f'user_management_manage_single_{group_name}_reactivate',
+        'single_user_url': f'user_management_manage_single_{group_name}',
+        'delete_user_url': f'user_management_manage_single_{group_name}_delete',
+        'add_user_url': f'user_management_{group_name}_add_user',
+        'add_multiple_users_url': f'user_management_{group_name}_add_multiple_users',
 
         'sort': sort,
         'search_query': search_query,
@@ -571,6 +574,7 @@ def list_users_in_group(request: HttpRequest, group_name: str, export: bool = Fa
         'sponsorship_status': sponsorship_status
     }
     context['pretty_group_name_plural'] = context['pretty_group_name'] + "s"
+    context['bulk_org_user_creation_feature_flag'] = flag_is_active(request, 'bulk-organization-user-creation')
 
     return render(request, 'user_management/manage_users.html', context)
 
@@ -652,7 +656,7 @@ def list_sponsored_users(
         'single_user_url':f'user_management_manage_single_{group_name}',
         'delete_user_url':f'user_management_manage_single_{group_name}_delete',
         'add_user_url':f'user_management_{group_name}_add_user',
-
+        'add_multiple_users_url':f'user_management_{group_name}_add_multiple_users',
         'sort': sort,
         'search_query': search_query,
         'registrar_filter': registrar_filter,
@@ -717,7 +721,8 @@ class BaseAddUserToGroup(UpdateView):
         Base class for views that take an email address and either add a new user, or add the user to
         a given group if they already exist.
     """
-
+    is_batch = False
+    
     def __init__(self, **kwargs):
         super(BaseAddUserToGroup, self).__init__(**kwargs)
         self.extra_context = {}
@@ -766,26 +771,69 @@ class BaseAddUserToGroup(UpdateView):
     def form_valid(self, form):
         """ If form is submitted successfully, show success message and send email to target user. """
         response = super(BaseAddUserToGroup, self).form_valid(form)
-        if self.is_new:
-            email_new_user(
-                self.request,
-                self.object,
-                self.user_added_email_template,
-                { 'form': form }
-            )
-            messages.add_message(self.request, messages.SUCCESS,
-                                 f'<h4>Account created!</h4> <strong>{self.object.email}</strong> will receive an email with instructions on how to activate the account and create a password.',
-                                 extra_tags='safe')
+
+        def add_message(level, title, body):
+            messages.add_message(self.request, level, f'<h4>{title}</h4>{body}', extra_tags='safe')
+
+        def send_emails(users, email_function, email_template, extra_context, *args):
+            for obj in users.values():
+                try:
+                    if email_function == 'email_new_user':
+                        email_new_user(*args, obj, email_template, extra_context)
+                    else:
+                        send_user_email(obj.raw_email, email_template, extra_context)
+                except Exception as e:
+                    logger.exception(f"Failed to send email to {obj.raw_email}: {e}")
+
+        context = {'form': form}
+
+        if not self.is_batch:
+            user = {self.object.email: self.object}
+            if self.is_new:
+                send_emails(user, 'email_new_user', self.user_added_email_template, context, self.request)
+                add_message(
+                    messages.SUCCESS,
+                    "Account created!",
+                    f"<strong>{self.object.email}</strong> will receive an email with instructions on how to activate the account and create a password."
+                )
+            else:
+                send_emails(
+                    user,
+                    'send_user_email',
+                    self.confirmation_email_template,
+                    {
+                        'account_settings_page': f"https://{self.request.get_host()}{reverse('settings_profile')}",
+                        'form': form,
+                    },
+                )
+                add_message(messages.SUCCESS, "Success!", f"<strong>{self.object.email}</strong> added.")
         else:
-            send_user_email(
-                self.object.raw_email,
-                self.confirmation_email_template,
-                { 'account_settings_page': f"https://{self.request.get_host()}{reverse('settings_profile')}",
-                  'form': form }
+            if form.created_users:
+                send_emails(form.created_users, 'email_new_user', self.user_added_email_template, context, self.request)
+            if form.updated_users:
+                send_emails(form.updated_users, 'send_user_email', self.confirmation_email_template, context)
+
+            success_message = (
+                "New users will receive an email with instructions on how to activate their accounts and create a password.<br>"
+                "Existing users will receive an email notifying them about their updated organization affiliation."
             )
-            messages.add_message(self.request, messages.SUCCESS,
-                                 f'<h4>Success!</h4> <strong>{self.object.email}</strong> added.',
-                                 extra_tags='safe')
+
+            if form.ineligible_users:
+                ineligible_user_emails = ", ".join(form.ineligible_users)
+                error_message = (
+                    f"The following users were not added to {form.cleaned_data['organizations']} because they are "
+                    f"already a registrar user or admin user and cannot be added to an individual organization: {ineligible_user_emails}"
+                )
+                if form.created_users or form.updated_users:
+                    add_message(
+                        messages.SUCCESS,
+                        "Success!",
+                        f"{success_message}<br><br>Note: {error_message}"
+                    )
+                else:
+                    add_message(messages.ERROR, "Error!", error_message)
+            else:
+                add_message(messages.SUCCESS, "Success!", success_message)
 
         return response
 
@@ -812,6 +860,25 @@ class AddUserToOrganization(RequireOrgOrRegOrAdminUser, BaseAddUserToGroup):
             return False, f"{self.object} is an admin user and cannot be added to individual organizations."
         if self.object.is_registrar_user():
             return False, f"{self.object} is already a registrar user and cannot be added to individual organizations."
+        return True, ""
+
+
+class AddMultipleUsersToOrganization(RequireOrgOrRegOrAdminUser, BaseAddUserToGroup):
+    template_name = 'user_management/add_multiple_users_to_org.html'
+    success_url = reverse_lazy('user_management_manage_organization_user')
+    confirmation_email_template = 'email/user_added_to_organization.txt'
+    user_added_email_template = 'email/new_user_added_to_org_by_other.txt'
+    new_user_form = MultipleUsersFormWithOrganization
+    is_batch = True
+
+    def get_form_kwargs(self):
+        """ Filter organizations to those current user can access. """
+        return dict(
+            super(AddMultipleUsersToOrganization, self).get_form_kwargs(),
+            request=self.request)
+
+    def target_user_valid(self):
+        """ Defaulting to True since we don't need to validate the users on form render for batch upload flow. """
         return True, ""
 
 

@@ -1,5 +1,7 @@
 import logging
 import secrets
+import csv
+from io import TextIOWrapper
 import string
 from typing import Any, Mapping
 
@@ -8,6 +10,7 @@ from django import forms
 from django.conf import settings
 from django.contrib.auth.forms import SetPasswordForm
 from django.core.exceptions import ObjectDoesNotExist, ValidationError
+from django.core.validators import EmailValidator
 from django.db.models.fields import BLANK_CHOICE_DASH
 from django.forms import Form, ModelForm
 from django.http import HttpRequest, HttpResponseRedirect
@@ -435,6 +438,169 @@ class UserFormWithOrganization(UserForm):
             )
 
         return instance
+
+
+class MultipleUsersFormWithOrganization(ModelForm):
+    """
+    Create multiple organization users via CSV file
+    """
+    organizations = forms.ModelChoiceField(label='Organization', queryset=Organization.objects.order_by('name'))
+    indefinite_affiliation = forms.BooleanField(
+        label="Permanent affiliation",
+        required=False,
+        initial=True
+    )
+    expires_at = forms.DateTimeField(
+        label="Affiliation expiration date",
+        widget=forms.DateTimeInput(attrs={"type": "date"}),
+        required=False
+    )
+    csv_file = forms.FileField(label='* User information',
+                               help_text=mark_safe("<br>* When creating your CSV, please include the following fields: first_name, last_name, email. "
+                                                   "First and last name columns may be left blank.<br><br>"
+                                                   "If there is already a Perma.cc account associated with an "
+                                                   "email, we will add an Organization affiliation. If there is not, "
+                                                   "an account will be created and automatically affiliated with this "
+                                                   "Organization."))
+
+    def __init__(self, request, data=None, files=None, **kwargs):
+        super(MultipleUsersFormWithOrganization, self).__init__(data, files, **kwargs)
+        self.request = request
+        self.user_data = {}
+        self.created_users = {}
+        self.updated_users = {}
+        self.ineligible_users = {}
+
+        # Filter available organizations based on the current user
+        query = self.fields['organizations'].queryset
+        if request.user.is_registrar_user():
+            query = query.filter(registrar_id=request.user.registrar_id)
+        elif request.user.is_organization_user:
+            query = query.filter(users=request.user.pk)
+        self.fields['organizations'].queryset = query
+
+    class Meta:
+        model = LinkUser
+        fields = ["organizations", "indefinite_affiliation", "expires_at", "csv_file"]
+
+    def clean_csv_file(self):
+        file = self.cleaned_data['csv_file']
+
+        # check if file is CSV
+        if not file.name.endswith('.csv'):
+            raise forms.ValidationError("The file must be a CSV.")
+
+        file = TextIOWrapper(file, encoding='utf-8')
+        reader = csv.DictReader(file)
+
+        # validate the headers
+        headers = reader.fieldnames
+        if not all(item in headers for item in ['first_name', 'last_name', 'email']):
+            raise forms.ValidationError("CSV file must contain a header row with first_name, last_name and email columns.")
+
+        # validate the rows
+        seen = set()
+        row_count = 0
+
+        for row in reader:
+            row_count += 1
+            email = row.get('email')
+            email = email.strip() if email else None
+
+            if not email:
+                raise forms.ValidationError("Each row in the CSV file must contain email.")
+
+            email_validator = EmailValidator()
+            try:
+                email_validator(email)
+            except ValidationError:
+                raise forms.ValidationError(f"CSV file contains invalid email address: {email}")
+
+            if email in seen:
+                raise forms.ValidationError(f"CSV file cannot contain duplicate users: {email}")
+            else:
+                seen.add(email)
+                self.user_data[email] = {
+                    'first_name': row.get('first_name', '').strip(),
+                    'last_name': row.get('last_name', '').strip()
+                }
+
+        if row_count == 0:
+            raise forms.ValidationError("CSV file must contain at least one user.")
+
+        file.seek(0)
+        self.cleaned_data['csv_file'] = file
+        return file
+
+    def save(self, commit=True):
+        expires_at = self.cleaned_data['expires_at']
+        organization = self.cleaned_data['organizations']
+
+        raw_emails = set(self.user_data.keys())
+        # lower casing the emails to feed into the filter query in order to prevent duplicate user creation
+        lower_case_emails = {email.lower() for email in self.user_data.keys()}
+        existing_users = LinkUser.objects.filter(email__in=lower_case_emails)
+        updated_user_affiliations = []
+
+        for user in existing_users:
+            if commit:
+                if user.is_staff or user.is_registrar_user():
+                    self.ineligible_users[user.email] = user
+                else:
+                    updated_user_affiliations.append(user)
+                    self.updated_users[user.email] = user
+
+        new_user_emails = lower_case_emails - set(self.ineligible_users.keys()) - set(self.updated_users.keys())
+
+        created_user_affiliations = []
+
+        if new_user_emails and commit:
+            for email in new_user_emails:
+                raw_email = next((raw_email for raw_email in raw_emails if raw_email.lower() == email.lower()), None)
+                new_user = LinkUser(
+                        email=raw_email,
+                        first_name=self.user_data[raw_email]['first_name'],
+                        last_name=self.user_data[raw_email]['last_name']
+                )
+                new_user.save()
+                self.created_users[email] = new_user
+
+                created_user_affiliations.append(
+                    UserOrganizationAffiliation(
+                        user=new_user,
+                        organization=organization,
+                        expires_at=expires_at
+                    )
+                )
+
+        if commit:
+            # create the affiliations for new users
+            UserOrganizationAffiliation.objects.bulk_create(created_user_affiliations)
+
+            # create or update the affiliations of existing users
+            # affiliations that already exist
+            preexisting_affiliations = (UserOrganizationAffiliation.objects.filter(user__in=updated_user_affiliations,
+                                                                                   organization=organization))
+
+            preexisting_affiliations_set = set(affiliation.user for affiliation in preexisting_affiliations)
+            all_user_affiliations = set(updated_user_affiliations)
+            # new affiliations
+            new_affiliations = all_user_affiliations - preexisting_affiliations_set
+            new_affiliation_objs = []
+
+            for item in new_affiliations:
+                new_affiliation_objs.append(UserOrganizationAffiliation(
+                    user=item,
+                    organization=organization,
+                    expires_at=expires_at
+                ))
+
+            if preexisting_affiliations:
+                preexisting_affiliations.update(expires_at=expires_at)
+            if new_affiliation_objs:
+                UserOrganizationAffiliation.objects.bulk_create(new_affiliation_objs)
+
+        return self
 
 
 ### USER EDIT FORMS ###
