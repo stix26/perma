@@ -537,11 +537,10 @@ class MultipleUsersFormWithOrganization(ModelForm):
         existing_users = LinkUser.objects.filter(email__in=all_emails)
 
         for user in existing_users:
-            if commit:
-                if user.is_staff or user.is_registrar_user():
-                    self.ineligible_users[user.email] = user
-                else:
-                    self.updated_users[user.email] = user
+            if user.is_staff or user.is_registrar_user():
+                self.ineligible_users[user.email] = user
+            else:
+                self.updated_users[user.email] = user
 
         # update the expiration date of any affiliations that already exist
         preexisting_affiliations = UserOrganizationAffiliation.objects.filter(
