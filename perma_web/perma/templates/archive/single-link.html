@@ -225,7 +225,10 @@
           <a href="?embed=False" class="btn btn-ui-small btn-dashboard">Show playback controls</a>
         {% endif %}
         {% if link.can_play_back %}
-          <a href="{% url 'single_permalink' guid=link.guid %}?type=warc_download" role="button" class="btn btn-ui-small btn-dashboard" title="download">Download Archive</a>
+          <a href="{% url 'single_permalink' guid=link.guid %}?type=warc_download" role="button" class="btn btn-ui-small btn-dashboard" title="download">Download WARC</a>
+            {% if link.wacz_size %}
+              <a href="{% url 'single_permalink' guid=link.guid %}?type=wacz_download" role="button" class="btn btn-ui-small btn-dashboard" title="download">Download WACZ</a>
+            {% endif %}
         {% endif %}
         {% if not can_edit %}
           <a href="{% url 'report' %}?guid={{link.guid}}" role="button" class="btn btn-ui-small btn-dashboard flag" title="Flag as inappropriate">Flag<span class="_verbose"> as inappropriate</span></a>

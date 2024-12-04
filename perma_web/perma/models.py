@@ -2037,6 +2037,12 @@ class Link(DeletableModel):
         else:
             raise RuntimeError(f'No archive present for {self.guid}')
 
+    @contextmanager
+    def get_wacz(self):
+        if not self.wacz_size:
+            raise RuntimeError(f'No WACZ present for {self.guid}')
+        yield storages[settings.WACZ_STORAGE].open(self.wacz_storage_file(), 'rb')
+
     def accessible_to(self, user):
         return user.can_edit(self)
 
