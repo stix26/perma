@@ -531,6 +531,7 @@ class MultipleUsersFormWithOrganization(ModelForm):
     def save(self, commit=True):
         expires_at = self.cleaned_data['expires_at']
         organization = self.cleaned_data['organizations']
+        affiliations_to_create = []
 
         all_emails = set(self.user_data.keys())
         existing_users = LinkUser.objects.filter(email__in=all_emails)
@@ -553,21 +554,14 @@ class MultipleUsersFormWithOrganization(ModelForm):
         # build affiliation objects for existing users that need them
         users_with_existing_affiliations = set(affiliation.user for affiliation in preexisting_affiliations)
         users_without_existing_affiliations = set(self.updated_users.values())- users_with_existing_affiliations
-        new_affiliation_objs = []
         for user in users_without_existing_affiliations:
-            new_affiliation_objs.append(UserOrganizationAffiliation(
+            affiliations_to_create.append(UserOrganizationAffiliation(
                 user=user,
                 organization=organization,
                 expires_at=expires_at
             ))
 
-        if new_affiliation_objs and commit:
-            UserOrganizationAffiliation.objects.bulk_create(new_affiliation_objs)
-
-
         new_user_emails = all_emails - set(self.ineligible_users.keys()) - set(self.updated_users.keys())
-
-        created_user_affiliations = []
 
         if new_user_emails and commit:
             for email in new_user_emails:
@@ -579,7 +573,7 @@ class MultipleUsersFormWithOrganization(ModelForm):
                 new_user.save()
                 self.created_users[email] = new_user
 
-                created_user_affiliations.append(
+                affiliations_to_create.append(
                     UserOrganizationAffiliation(
                         user=new_user,
                         organization=organization,
@@ -587,9 +581,9 @@ class MultipleUsersFormWithOrganization(ModelForm):
                     )
                 )
 
-        if commit:
-            # create the affiliations for new users
-            UserOrganizationAffiliation.objects.bulk_create(created_user_affiliations)
+        # create new affiliation objects
+        if affiliations_to_create and commit:
+            UserOrganizationAffiliation.objects.bulk_create(affiliations_to_create)
 
         return self
 
