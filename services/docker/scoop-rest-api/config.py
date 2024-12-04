@@ -1,4 +1,4 @@
-# This is the default config.py from the Scoop REST API as of 11/19/2024
+# This is the default config.py from the Scoop REST API as of 12/04/2024
 # https://github.com/harvard-lil/perma-scoop-api/blob/main/scoop_rest_api/config.py
 # We use it to:
 # - override the blocklist, to allow the capturing of docker-hosted pages in our test suite;
