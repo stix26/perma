@@ -499,11 +499,7 @@ class MultipleUsersFormWithOrganization(ModelForm):
             raise forms.ValidationError("CSV file must contain a header row with first_name, last_name and email columns.")
 
         # validate the rows
-        seen = set()
-        row_count = 0
-
         for row in reader:
-            row_count += 1
             email = row.get('email')
             email = email.strip() if email else None
 
@@ -516,7 +512,7 @@ class MultipleUsersFormWithOrganization(ModelForm):
             except ValidationError:
                 raise forms.ValidationError(f"CSV file contains invalid email address: {email}")
 
-            if email in seen:
+            if email in self.user_data:
                 raise forms.ValidationError(f"CSV file cannot contain duplicate users: {email}")
             else:
                 seen.add(email)
@@ -525,7 +521,7 @@ class MultipleUsersFormWithOrganization(ModelForm):
                     'last_name': row.get('last_name', '').strip()
                 }
 
-        if row_count == 0:
+        if not len(self.user_data):
             raise forms.ValidationError("CSV file must contain at least one user.")
 
         file.seek(0)
