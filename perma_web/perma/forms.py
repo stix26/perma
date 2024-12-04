@@ -560,16 +560,17 @@ class MultipleUsersFormWithOrganization(ModelForm):
                 expires_at=expires_at
             ))
 
+        # create new users and their affiliation objects
         new_user_emails = all_emails - set(self.ineligible_users.keys()) - set(self.updated_users.keys())
-
-        if new_user_emails and commit:
+        if new_user_emails:
             for email in new_user_emails:
                 new_user = LinkUser(
                         email=self.user_data[email]['raw_email'],
                         first_name=self.user_data[email]['first_name'],
                         last_name=self.user_data[email]['last_name']
                 )
-                new_user.save()
+                if commit:
+                    new_user.save()
                 self.created_users[email] = new_user
 
                 affiliations_to_create.append(
