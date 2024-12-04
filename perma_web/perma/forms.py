@@ -534,14 +534,12 @@ class MultipleUsersFormWithOrganization(ModelForm):
 
         all_emails = set(self.user_data.keys())
         existing_users = LinkUser.objects.filter(email__in=all_emails)
-        updated_user_affiliations = []
 
         for user in existing_users:
             if commit:
                 if user.is_staff or user.is_registrar_user():
                     self.ineligible_users[user.email] = user
                 else:
-                    updated_user_affiliations.append(user)
                     self.updated_users[user.email] = user
 
         new_user_emails = all_emails - set(self.ineligible_users.keys()) - set(self.updated_users.keys())
@@ -572,13 +570,12 @@ class MultipleUsersFormWithOrganization(ModelForm):
 
             # create or update the affiliations of existing users
             # affiliations that already exist
-            preexisting_affiliations = (UserOrganizationAffiliation.objects.filter(user__in=updated_user_affiliations,
+            preexisting_affiliations = (UserOrganizationAffiliation.objects.filter(user__in=self.updated_users.values(),
                                                                                    organization=organization))
 
             preexisting_affiliations_set = set(affiliation.user for affiliation in preexisting_affiliations)
-            all_user_affiliations = set(updated_user_affiliations)
             # new affiliations
-            new_affiliations = all_user_affiliations - preexisting_affiliations_set
+            new_affiliations = set(self.updated_users.values())- preexisting_affiliations_set
             new_affiliation_objs = []
 
             for item in new_affiliations:
