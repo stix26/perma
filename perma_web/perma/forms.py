@@ -542,6 +542,29 @@ class MultipleUsersFormWithOrganization(ModelForm):
                 else:
                     self.updated_users[user.email] = user
 
+        # update the expiration date of any affiliations that already exist
+        preexisting_affiliations = UserOrganizationAffiliation.objects.filter(
+            user__in=self.updated_users.values(),
+            organization=organization
+        )
+        if preexisting_affiliations and commit:
+            preexisting_affiliations.update(expires_at=expires_at)
+
+        # build affiliation objects for existing users that need them
+        users_with_existing_affiliations = set(affiliation.user for affiliation in preexisting_affiliations)
+        users_without_existing_affiliations = set(self.updated_users.values())- users_with_existing_affiliations
+        new_affiliation_objs = []
+        for user in users_without_existing_affiliations:
+            new_affiliation_objs.append(UserOrganizationAffiliation(
+                user=user,
+                organization=organization,
+                expires_at=expires_at
+            ))
+
+        if new_affiliation_objs and commit:
+            UserOrganizationAffiliation.objects.bulk_create(new_affiliation_objs)
+
+
         new_user_emails = all_emails - set(self.ineligible_users.keys()) - set(self.updated_users.keys())
 
         created_user_affiliations = []
@@ -567,28 +590,6 @@ class MultipleUsersFormWithOrganization(ModelForm):
         if commit:
             # create the affiliations for new users
             UserOrganizationAffiliation.objects.bulk_create(created_user_affiliations)
-
-            # create or update the affiliations of existing users
-            # affiliations that already exist
-            preexisting_affiliations = (UserOrganizationAffiliation.objects.filter(user__in=self.updated_users.values(),
-                                                                                   organization=organization))
-
-            preexisting_affiliations_set = set(affiliation.user for affiliation in preexisting_affiliations)
-            # new affiliations
-            new_affiliations = set(self.updated_users.values())- preexisting_affiliations_set
-            new_affiliation_objs = []
-
-            for item in new_affiliations:
-                new_affiliation_objs.append(UserOrganizationAffiliation(
-                    user=item,
-                    organization=organization,
-                    expires_at=expires_at
-                ))
-
-            if preexisting_affiliations:
-                preexisting_affiliations.update(expires_at=expires_at)
-            if new_affiliation_objs:
-                UserOrganizationAffiliation.objects.bulk_create(new_affiliation_objs)
 
         return self
 
