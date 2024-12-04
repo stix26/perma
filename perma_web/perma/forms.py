@@ -531,18 +531,19 @@ class MultipleUsersFormWithOrganization(ModelForm):
     def save(self, commit=True):
         expires_at = self.cleaned_data['expires_at']
         organization = self.cleaned_data['organizations']
-        affiliations_to_create = []
 
         all_emails = set(self.user_data.keys())
-        existing_users = LinkUser.objects.filter(email__in=all_emails)
+        affiliations_to_create = []
 
+        # find any existing users, and exclude any that are ineligible to become org users
+        existing_users = LinkUser.objects.filter(email__in=all_emails)
         for user in existing_users:
             if user.is_staff or user.is_registrar_user():
                 self.ineligible_users[user.email] = user
             else:
                 self.updated_users[user.email] = user
 
-        # update the expiration date of any affiliations that already exist
+        # update the affiliation expiration date for any already-affiliated users
         preexisting_affiliations = UserOrganizationAffiliation.objects.filter(
             user__in=self.updated_users.values(),
             organization=organization
