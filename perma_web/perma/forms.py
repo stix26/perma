@@ -512,11 +512,11 @@ class MultipleUsersFormWithOrganization(ModelForm):
             except ValidationError:
                 raise forms.ValidationError(f"CSV file contains invalid email address: {email}")
 
-            if email in self.user_data:
+            if email.lower() in self.user_data:
                 raise forms.ValidationError(f"CSV file cannot contain duplicate users: {email}")
             else:
-                seen.add(email)
-                self.user_data[email] = {
+                self.user_data[email.lower()] = {
+                    'raw_email': email,
                     'first_name': row.get('first_name', '').strip(),
                     'last_name': row.get('last_name', '').strip()
                 }
@@ -532,10 +532,8 @@ class MultipleUsersFormWithOrganization(ModelForm):
         expires_at = self.cleaned_data['expires_at']
         organization = self.cleaned_data['organizations']
 
-        raw_emails = set(self.user_data.keys())
-        # lower casing the emails to feed into the filter query in order to prevent duplicate user creation
-        lower_case_emails = {email.lower() for email in self.user_data.keys()}
-        existing_users = LinkUser.objects.filter(email__in=lower_case_emails)
+        all_emails = set(self.user_data.keys())
+        existing_users = LinkUser.objects.filter(email__in=all_emails)
         updated_user_affiliations = []
 
         for user in existing_users:
@@ -546,17 +544,16 @@ class MultipleUsersFormWithOrganization(ModelForm):
                     updated_user_affiliations.append(user)
                     self.updated_users[user.email] = user
 
-        new_user_emails = lower_case_emails - set(self.ineligible_users.keys()) - set(self.updated_users.keys())
+        new_user_emails = all_emails - set(self.ineligible_users.keys()) - set(self.updated_users.keys())
 
         created_user_affiliations = []
 
         if new_user_emails and commit:
             for email in new_user_emails:
-                raw_email = next((raw_email for raw_email in raw_emails if raw_email.lower() == email.lower()), None)
                 new_user = LinkUser(
-                        email=raw_email,
-                        first_name=self.user_data[raw_email]['first_name'],
-                        last_name=self.user_data[raw_email]['last_name']
+                        email=self.user_data[email]['raw_email'],
+                        first_name=self.user_data[email]['first_name'],
+                        last_name=self.user_data[email]['last_name']
                 )
                 new_user.save()
                 self.created_users[email] = new_user
