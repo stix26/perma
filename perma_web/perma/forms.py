@@ -546,7 +546,7 @@ class MultipleUsersFormWithOrganization(ModelForm):
         preexisting_affiliations = UserOrganizationAffiliation.objects.filter(
             user__in=self.updated_users.values(),
             organization=organization
-        )
+        ).select_related('user')
         if preexisting_affiliations and commit:
             preexisting_affiliations.update(expires_at=expires_at)
 
