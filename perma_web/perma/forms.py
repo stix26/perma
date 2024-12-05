@@ -521,7 +521,7 @@ class MultipleUsersFormWithOrganization(ModelForm):
                     'last_name': row.get('last_name', '').strip()
                 }
 
-        if not len(self.user_data):
+        if not self.user_data:
             raise forms.ValidationError("CSV file must contain at least one user.")
 
         file.seek(0)
