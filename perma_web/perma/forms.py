@@ -532,7 +532,7 @@ class MultipleUsersFormWithOrganization(ModelForm):
         expires_at = self.cleaned_data['expires_at']
         organization = self.cleaned_data['organizations']
 
-        all_emails = set(self.user_data.keys())
+        all_emails = set(self.user_data)
         affiliations_to_create = []
 
         # find any existing users, and exclude any that are ineligible to become org users
@@ -562,7 +562,7 @@ class MultipleUsersFormWithOrganization(ModelForm):
             ))
 
         # create new users and their affiliation objects
-        new_user_emails = all_emails - set(self.ineligible_users.keys()) - set(self.updated_users.keys())
+        new_user_emails = all_emails - set(self.ineligible_users) - set(self.updated_users)
         for email in new_user_emails:
             new_user = LinkUser(
                     email=self.user_data[email]['raw_email'],
