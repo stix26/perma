@@ -553,7 +553,7 @@ class MultipleUsersFormWithOrganization(ModelForm):
 
         # build affiliation objects for existing users that need them
         users_with_existing_affiliations = set(affiliation.user for affiliation in preexisting_affiliations)
-        users_without_existing_affiliations = set(self.updated_users.values())- users_with_existing_affiliations
+        users_without_existing_affiliations = set(self.updated_users.values()) - users_with_existing_affiliations
         for user in users_without_existing_affiliations:
             affiliations_to_create.append(UserOrganizationAffiliation(
                 user=user,
