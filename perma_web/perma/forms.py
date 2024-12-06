@@ -502,11 +502,7 @@ class MultipleUsersFormWithOrganization(ModelForm):
             raise forms.ValidationError("CSV file must contain a header row with first_name, last_name and email columns.")
 
         # validate the rows
-        seen = set()
-        row_count = 0
-
         for row in reader:
-            row_count += 1
             email = row.get('email')
             email = email.strip() if email else None
 
@@ -519,16 +515,16 @@ class MultipleUsersFormWithOrganization(ModelForm):
             except ValidationError:
                 raise forms.ValidationError(f"CSV file contains invalid email address: {email}")
 
-            if email in seen:
+            if email.lower() in self.user_data:
                 raise forms.ValidationError(f"CSV file cannot contain duplicate users: {email}")
             else:
-                seen.add(email)
-                self.user_data[email] = {
+                self.user_data[email.lower()] = {
+                    'raw_email': email,
                     'first_name': row.get('first_name', '').strip(),
                     'last_name': row.get('last_name', '').strip()
                 }
 
-        if row_count == 0:
+        if not self.user_data:
             raise forms.ValidationError("CSV file must contain at least one user.")
 
         file.seek(0)
@@ -539,69 +535,58 @@ class MultipleUsersFormWithOrganization(ModelForm):
         expires_at = self.cleaned_data['expires_at']
         organization = self.cleaned_data['organizations']
 
-        raw_emails = set(self.user_data.keys())
-        # lower casing the emails to feed into the filter query in order to prevent duplicate user creation
-        lower_case_emails = {email.lower() for email in self.user_data.keys()}
-        existing_users = LinkUser.objects.filter(email__in=lower_case_emails)
-        updated_user_affiliations = []
+        all_emails = set(self.user_data)
+        affiliations_to_create = []
 
+        # find any existing users, and exclude any that are ineligible to become org users
+        existing_users = LinkUser.objects.filter(email__in=all_emails)
         for user in existing_users:
+            if user.is_staff or user.is_registrar_user():
+                self.ineligible_users[user.email] = user
+            else:
+                self.updated_users[user.email] = user
+
+        # update the affiliation expiration date for any already-affiliated users
+        preexisting_affiliations = UserOrganizationAffiliation.objects.filter(
+            user__in=self.updated_users.values(),
+            organization=organization
+        ).select_related('user')
+        if preexisting_affiliations and commit:
+            preexisting_affiliations.update(expires_at=expires_at)
+
+        # build affiliation objects for existing users that need them
+        users_with_existing_affiliations = set(affiliation.user for affiliation in preexisting_affiliations)
+        users_without_existing_affiliations = set(self.updated_users.values()) - users_with_existing_affiliations
+        for user in users_without_existing_affiliations:
+            affiliations_to_create.append(UserOrganizationAffiliation(
+                user=user,
+                organization=organization,
+                expires_at=expires_at
+            ))
+
+        # create new users and their affiliation objects
+        new_user_emails = all_emails - set(self.ineligible_users) - set(self.updated_users)
+        for email in new_user_emails:
+            new_user = LinkUser(
+                    email=self.user_data[email]['raw_email'],
+                    first_name=self.user_data[email]['first_name'],
+                    last_name=self.user_data[email]['last_name']
+            )
             if commit:
-                if user.is_staff or user.is_registrar_user():
-                    self.ineligible_users[user.email] = user
-                else:
-                    updated_user_affiliations.append(user)
-                    self.updated_users[user.email] = user
-
-        new_user_emails = lower_case_emails - set(self.ineligible_users.keys()) - set(self.updated_users.keys())
-
-        created_user_affiliations = []
-
-        if new_user_emails and commit:
-            for email in new_user_emails:
-                raw_email = next((raw_email for raw_email in raw_emails if raw_email.lower() == email.lower()), None)
-                new_user = LinkUser(
-                        email=raw_email,
-                        first_name=self.user_data[raw_email]['first_name'],
-                        last_name=self.user_data[raw_email]['last_name']
-                )
                 new_user.save()
-                self.created_users[email] = new_user
+            self.created_users[email] = new_user
 
-                created_user_affiliations.append(
-                    UserOrganizationAffiliation(
-                        user=new_user,
-                        organization=organization,
-                        expires_at=expires_at
-                    )
-                )
-
-        if commit:
-            # create the affiliations for new users
-            UserOrganizationAffiliation.objects.bulk_create(created_user_affiliations)
-
-            # create or update the affiliations of existing users
-            # affiliations that already exist
-            preexisting_affiliations = (UserOrganizationAffiliation.objects.filter(user__in=updated_user_affiliations,
-                                                                                   organization=organization))
-
-            preexisting_affiliations_set = set(affiliation.user for affiliation in preexisting_affiliations)
-            all_user_affiliations = set(updated_user_affiliations)
-            # new affiliations
-            new_affiliations = all_user_affiliations - preexisting_affiliations_set
-            new_affiliation_objs = []
-
-            for item in new_affiliations:
-                new_affiliation_objs.append(UserOrganizationAffiliation(
-                    user=item,
+            affiliations_to_create.append(
+                UserOrganizationAffiliation(
+                    user=new_user,
                     organization=organization,
                     expires_at=expires_at
-                ))
+                )
+            )
 
-            if preexisting_affiliations:
-                preexisting_affiliations.update(expires_at=expires_at)
-            if new_affiliation_objs:
-                UserOrganizationAffiliation.objects.bulk_create(new_affiliation_objs)
+        # create new affiliation objects
+        if affiliations_to_create and commit:
+            UserOrganizationAffiliation.objects.bulk_create(affiliations_to_create)
 
         return self
 
