@@ -655,7 +655,7 @@ class LinkResourceTransactionTestCase(LinkResourceTestMixin, ApiResourceTransact
                                        user=self.org_user)
 
             link = Link.objects.get(guid=obj['guid'])
-            self.assertRecordsInArchive(link, upload=True, filetype='warc')
+            self.assertRecordsInArchive(link, upload=True, filetype='wacz')
             self.assertEqual(link.primary_capture.user_upload, True)
 
     def test_should_create_archive_from_jpg_file(self):
@@ -666,7 +666,7 @@ class LinkResourceTransactionTestCase(LinkResourceTestMixin, ApiResourceTransact
                                        user=self.org_user)
 
             link = Link.objects.get(guid=obj['guid'])
-            self.assertRecordsInArchive(link, upload=True, filetype='warc')
+            self.assertRecordsInArchive(link, upload=True, filetype='wacz')
             self.assertEqual(link.primary_capture.user_upload, True)
 
     def test_should_reject_jpg_file_with_invalid_url(self):
@@ -687,7 +687,7 @@ class LinkResourceTransactionTestCase(LinkResourceTestMixin, ApiResourceTransact
 
             link = Link.objects.get(guid=obj['guid'])
             self.assertEqual(link.submitted_url, 'http://asdf.asdf')
-            self.assertRecordsInArchive(link, upload=True, filetype='warc')
+            self.assertRecordsInArchive(link, upload=True, filetype='wacz')
             self.assertEqual(link.primary_capture.user_upload, True)
 
     def test_should_reject_invalid_file(self):

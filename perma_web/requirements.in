@@ -42,6 +42,7 @@ tempdir                                 # create temp dirs to be deleted at end 
 ua-parser                               # user agent parsing to detect mobile browsers during playbacks
 warcio                                  # helps us write metadata and inspect our WARCs
 warctools                               # for creating warcs from uploads
+wacz>=0.5.0                             # for creating waczs from uploads
 
 # alternate storages
 django-storages                         # custom storage backends for Django

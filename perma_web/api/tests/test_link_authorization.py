@@ -147,13 +147,13 @@ class LinkAuthorizationTestCase(LinkAuthorizationMixin, ApiResourceTestCase):
         #   capture were properly associated with actual web archive files, which is always
         #   the case outside of tests
         self.link.archive_timestamp = timezone.now() + timedelta(1)
-        self.link.warc_size = 1
+        self.link.warc_size = 0
         self.link.wacz_size = 1
         self.link.save()
 
-        # This link has a warc and a wacz
+        # This link has a wacz and no warc
         self.link.refresh_from_db()
-        self.assertTrue(self.link.warc_size)
+        self.assertFalse(self.link.warc_size)
         self.assertTrue(self.link.wacz_size)
 
         old_primary_capture = self.link.primary_capture
@@ -168,10 +168,10 @@ class LinkAuthorizationTestCase(LinkAuthorizationMixin, ApiResourceTestCase):
 
         self.assertTrue(Capture.objects.filter(link_id=self.link.pk, role='primary').exclude(pk=old_primary_capture.pk).exists())
 
-        # This link now only has a warc, but not a wacz
+        # This link still only has a wacz
         self.link.refresh_from_db()
-        self.assertTrue(self.link.warc_size)
-        self.assertFalse(self.link.wacz_size)
+        self.assertFalse(self.link.warc_size)
+        self.assertTrue(self.link.wacz_size)
 
 
     def test_should_reject_patch_with_file_for_out_of_window_link(self):

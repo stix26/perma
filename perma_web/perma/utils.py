@@ -13,6 +13,7 @@ import os
 import string
 import tempfile
 from typing import Literal, TypeVar
+import uuid
 import unicodedata
 from wsgiref.util import FileWrapper
 
@@ -33,6 +34,7 @@ from django.http import (
     JsonResponse,
     StreamingHttpResponse,
 )
+from django.template import loader
 from django.urls import reverse
 from django.utils import timezone
 from django.views.decorators.debug import sensitive_variables
@@ -43,6 +45,7 @@ import requests
 import surt
 import tempdir
 from ua_parser import user_agent_parser
+from wacz.main import create_wacz
 from warcio.warcwriter import BufferWARCWriter
 
 from perma.exceptions import (
@@ -498,26 +501,103 @@ def decrypt_from_perma_payments(ciphertext, encoder=encoding.Base64Encoder):
     return box.decrypt(ciphertext, encoder=encoder)
 
 #
-# warc writing
+# wacz writing
 #
 
-@contextmanager
-def preserve_perma_warc(guid, timestamp, destination, warc_size):
+def preserve_perma_wacz(uploaded_file, warc_url, mime_type, guid, url, title, timestamp, wacz_destination):
     """
-    Context manager for opening a perma warc, ready to receive warc records.
-    Safely closes and saves the file to storage when context is exited.
+    Creates and writes a perma WACZ for a user upload, returning the WACZ size.
+    This necessarily creates a WARC, but we no longer save it.
     """
-    # mode set to 'ab+' as a workaround for https://bugs.python.org/issue25341
-    out = tempfile.TemporaryFile('ab+')
-    write_perma_warc_header(out, guid, timestamp)
-    try:
-        yield out
-    finally:
-        out.flush()
-        warc_size.append(out.tell())
-        out.seek(0)
-        storages[settings.WARC_STORAGE].store_file(out, destination, overwrite=True)
-        out.close()
+    # this method of producing a timestamp string matches that in WACZ metadata
+    ts_string = timestamp.isoformat()[:-9] + "Z"
+
+    with tempfile.TemporaryDirectory() as tmpdir:
+        warc_file = f"{tmpdir}/data.warc.gz"
+        warc = open(warc_file, 'ab+')
+        write_perma_warc_header(warc, guid, timestamp)
+
+        uploaded_file.file.seek(0)
+        write_resource_record_from_asset(uploaded_file.file.read(), warc_url, mime_type, warc)
+
+        # create provenance summary and add it to the WARC
+        provenance = loader.get_template("provenance-summary.html")
+        context = {"url": url, "now": ts_string}
+        write_resource_record_from_asset(
+            provenance.render(context).encode(),
+            "file:///provenance-summary.html",
+            "text/html",
+            warc
+        )
+        warc.close()
+
+        # set up pages.jsonl...
+        pages = [
+            {"format": "json-pages-1.0", "id": "pages", "title": "All Pages"},
+            {
+                "id": f"{uuid.uuid4()}",
+                "url": warc_url,
+                "title": f"User-uploaded file replacing failed capture of {url}",
+                "ts": ts_string
+            },
+            {
+                "id": f"{uuid.uuid4()}",
+                "url": "file:///provenance-summary.html",
+                "title": "Provenance Summary",
+                "ts": ts_string
+            }
+        ]
+
+        output = f"{tmpdir}/{guid}.wacz"
+        pages_jsonl = f"{tmpdir}/pages.jsonl"
+
+        # write out pages.jsonl
+        with open(pages_jsonl, "w") as f:
+            for page in pages:
+                f.write(json.dumps(page) + "\n")
+
+        #  set up py-wacz options
+        # (I think this is actually an ArgumentParser parser or subparser)...
+        class Options(object):
+            def __init__(self, **kwargs):
+                self.__dict__.update(kwargs)
+
+        res = Options(**{
+            "inputs": [warc_file],
+            "output": output,
+            "pages": pages_jsonl,
+            "extra_pages": None,
+            "detect_pages": True,
+            "copy_pages": False,
+            "desc": f"User upload for {url}",
+            "hash_type": None,
+            "url": warc_url,
+            "ts": None,
+            "text": False,
+            "signing_url": None,
+            "signing_token": None,
+            "split_seeds": None,
+            "log_directory": None,
+            "title": title,
+            "date": None
+        })
+
+        # create the WACZ, write it to storage...
+        create_wacz(res)
+
+        with open(output, "rb") as f:
+            storages[settings.WACZ_STORAGE].store_file(f, wacz_destination, overwrite=True)
+
+        wacz_size = os.path.getsize(output)
+
+        # (no need to clean up, because the context manager will do it)
+
+    # ...and return the size
+    return wacz_size
+
+#
+# warc writing
+#
 
 def write_perma_warc_header(out_file, guid, timestamp):
     # build warcinfo header
