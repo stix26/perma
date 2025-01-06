@@ -10,12 +10,14 @@ import json
 import logging
 import operator
 import os
+import shutil
 import string
 import tempfile
 from typing import Literal, TypeVar
 import uuid
 import unicodedata
 from wsgiref.util import FileWrapper
+import zipfile
 
 from dateutil.relativedelta import relativedelta
 from django.conf import settings
@@ -45,7 +47,7 @@ import requests
 import surt
 import tempdir
 from ua_parser import user_agent_parser
-from wacz.main import create_wacz
+from warcio.archiveiterator import ArchiveIterator
 from warcio.warcwriter import BufferWARCWriter
 
 from perma.exceptions import (
@@ -504,15 +506,53 @@ def decrypt_from_perma_payments(ciphertext, encoder=encoding.Base64Encoder):
 # wacz writing
 #
 
+def now():
+    """Returns the current time"""
+    return tuple(datetime.utcnow().timetuple()[:6])
+
+
+def parse_warc(warc_file, warc_url):
+    """ Gets length and digest for uploaded file as well as provenance file """
+    targets = [warc_url, "file:///provenance-summary.html"]
+    response = {target: {key: None for key in ["length", "digest", "offset"]} for target in targets}
+    with open(warc_file, 'rb') as stream:
+        archive = ArchiveIterator(stream)
+        for record in archive:
+            headers = record.rec_headers.headers
+            for target in targets:
+                if any([h[1] == target for h in headers]):
+                    response[target]["length"] = [
+                        h[1] for h in headers if h[0] == "Content-Length"
+                    ][0]
+                    response[target]["digest"] = [
+                        h[1] for h in headers if h[0] == "WARC-Block-Digest"
+                    ][0]
+                    response[target]["offset"] = archive.offset
+    return response
+
+
+def sha256(input_file, buf_size=65536):
+    """ Returns the SHA256 hexdigest of a file """
+    sha256 = hashlib.sha256()
+    with open(input_file, 'rb') as f:
+        while True:
+            data = f.read(buf_size)
+            if not data:
+                break
+            sha256.update(data)
+    return sha256.hexdigest()
+
+
 def preserve_perma_wacz(uploaded_file, warc_url, mime_type, guid, url, title, timestamp, wacz_destination):
     """
     Creates and writes a perma WACZ for a user upload, returning the WACZ size.
     This necessarily creates a WARC, but we no longer save it.
     """
-    # this method of producing a timestamp string matches that in WACZ metadata
-    ts_string = timestamp.isoformat()[:-9] + "Z"
+    # the timestamps here are from Link's creation_timestamp, and have "+00:00" at the end, so
+    ts_string = timestamp.isoformat().partition("+")[0] + "Z"
 
     with tempfile.TemporaryDirectory() as tmpdir:
+        # prepare WARC...
         warc_file = f"{tmpdir}/data.warc.gz"
         warc = open(warc_file, 'ab+')
         write_perma_warc_header(warc, guid, timestamp)
@@ -531,7 +571,7 @@ def preserve_perma_wacz(uploaded_file, warc_url, mime_type, guid, url, title, ti
         )
         warc.close()
 
-        # set up pages.jsonl...
+        # ...set up pages.jsonl...
         pages = [
             {"format": "json-pages-1.0", "id": "pages", "title": "All Pages"},
             {
@@ -547,48 +587,114 @@ def preserve_perma_wacz(uploaded_file, warc_url, mime_type, guid, url, title, ti
                 "ts": ts_string
             }
         ]
+        pages_bytes = "\n".join([json.dumps(page) for page in pages]).encode("utf-8")
 
-        output = f"{tmpdir}/{guid}.wacz"
-        pages_jsonl = f"{tmpdir}/pages.jsonl"
+        # ...CDXJ index...
+        targets = ["file:///provenance-summary.html", warc_url]
+        selected_warc_headers = parse_warc(warc_file, warc_url)
+        cdxj = {
+            target: json.dumps({
+                "url": target,
+                "mime": "text/html" if target.endswith(".html") else mime_type,
+                "status": 200,
+                "digest": selected_warc_headers[target]["digest"],
+                "length": selected_warc_headers[target]["length"],
+                "offset": selected_warc_headers[target]["offset"],
+                "filename":"data.warc.gz"
+            }) for target in targets
+        }
+        ts = timestamp.strftime("%Y%m%d%H%M%S")
+        index = "\n".join(
+            [
+                f"{target} {ts} {cdxj[target]}"
+                for target in targets
+            ]
+        )
 
-        # write out pages.jsonl
-        with open(pages_jsonl, "w") as f:
-            for page in pages:
-                f.write(json.dumps(page) + "\n")
-
-        #  set up py-wacz options
-        # (I think this is actually an ArgumentParser parser or subparser)...
-        class Options(object):
-            def __init__(self, **kwargs):
-                self.__dict__.update(kwargs)
-
-        res = Options(**{
-            "inputs": [warc_file],
-            "output": output,
-            "pages": pages_jsonl,
-            "extra_pages": None,
-            "detect_pages": True,
-            "copy_pages": False,
-            "desc": f"User upload for {url}",
-            "hash_type": None,
-            "url": warc_url,
-            "ts": None,
-            "text": False,
-            "signing_url": None,
-            "signing_token": None,
-            "split_seeds": None,
-            "log_directory": None,
+        # ...datapackage...
+        datapackage = {
+            "profile": "data-package",
+            "wacz_version": "1.1.1",
             "title": title,
-            "date": None
-        })
+            "description": f"User upload for {url}",
+            "mainPageURL": warc_url,
+            "created": ts_string,
+            "software": "Perma.cc",  # version?
+            "resources": [
+                {
+                    "name": "pages.jsonl",
+                    "path": "pages/pages.jsonl",
+                    "hash": "sha256:" + hashlib.sha256(pages_bytes).hexdigest(),
+                    "bytes": len(pages_bytes)
+                },
+                {
+                    "name": "index.cdx",
+                    "path": "indexes/index.cdx",
+                    "hash": "sha256:" + hashlib.sha256(index.encode()).hexdigest(),
+                    "bytes": len(index)
+                },
+                {
+                    "name": "data.warc.gz",
+                    "path": "archive/data.warc.gz",
+                    "hash": "sha256:" + sha256(warc_file),
+                    "bytes": os.stat(warc_file).st_size
+                }
+            ],
+        }
+        # ...and datapackage digest
+        datapackage_digest = {
+            "path": "datapackage.json",
+            "hash": hashlib.sha256(json.dumps(datapackage).encode()).hexdigest()
+        }
 
-        # create the WACZ, write it to storage...
-        create_wacz(res)
+        # Now we can create the WACZ file...
+        wacz_file = f"{tmpdir}/{guid}.wacz"
+        wacz = zipfile.ZipFile(wacz_file, "w")
 
-        with open(output, "rb") as f:
+        # add index
+        index_file = zipfile.ZipInfo("indexes/index.cdx", now())
+        index_file.compress_type = zipfile.ZIP_DEFLATED
+        wacz.writestr(index_file, index.encode("utf-8"))
+
+        # add pages.jsonl
+        pages_file = zipfile.ZipInfo("pages/pages.jsonl", now())
+        pages_file.compress_type = zipfile.ZIP_DEFLATED
+        wacz.writestr(pages_file, pages_bytes)
+
+        # add WARC file
+        archive_file = zipfile.ZipInfo.from_file(
+            warc_file, "archive/data.warc.gz"
+        )
+        with wacz.open(archive_file, "w") as out_fh:
+            with open(warc_file, "rb") as in_fh:
+                shutil.copyfileobj(in_fh, out_fh)
+
+        # add datapackage
+        datapackage_file = zipfile.ZipInfo("datapackage.json", now())
+        datapackage_file.compress_type = zipfile.ZIP_DEFLATED
+        wacz.writestr(
+            datapackage_file,
+            json.dumps(datapackage).encode("utf-8")
+        )
+
+        # and datapackage digest
+        datapackage_digest_file = zipfile.ZipInfo(
+            "datapackage-digest.json", now()
+        )
+        datapackage_digest_file.compress_type = zipfile.ZIP_DEFLATED
+        wacz.writestr(
+            datapackage_digest_file,
+            json.dumps(datapackage_digest).encode("utf-8")
+        )
+
+        # and close the file
+        wacz.close()
+
+        # now store it
+        with open(wacz_file, "rb") as f:
             storages[settings.WACZ_STORAGE].store_file(f, wacz_destination, overwrite=True)
 
-        wacz_size = os.path.getsize(output)
+        wacz_size = os.stat(wacz_file).st_size
 
         # (no need to clean up, because the context manager will do it)
 
@@ -659,7 +765,7 @@ def write_resource_record_from_asset(data, url, content_type, out_file, extra_he
         (warctools.WarcRecord.ID, warctools.WarcRecord.random_warc_uuid()),
         (warctools.WarcRecord.DATE, warc_date),
         (warctools.WarcRecord.URL, bytes(url, 'utf-8')),
-        (warctools.WarcRecord.BLOCK_DIGEST, bytes(f'sha1:{hashlib.sha1(data).hexdigest()}', 'utf-8'))
+        (warctools.WarcRecord.BLOCK_DIGEST, bytes(f'sha256:{hashlib.sha256(data).hexdigest()}', 'utf-8'))
     ]
     if extra_headers:
         headers.extend(extra_headers)
