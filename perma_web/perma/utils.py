@@ -762,7 +762,7 @@ def write_resource_record_from_asset(data, url, content_type, out_file, extra_he
     """
     warc_date = warctools.warc.warc_datetime_str(timezone.now()).replace(b'+00:00Z', b'Z')
     headers = [
-        (warctools.WarcRecord.TYPE, warctools.WarcRecord.RESOURCE),
+        (warctools.WarcRecord.TYPE, warctools.WarcRecord.RESPONSE),
         (warctools.WarcRecord.ID, warctools.WarcRecord.random_warc_uuid()),
         (warctools.WarcRecord.DATE, warc_date),
         (warctools.WarcRecord.URL, bytes(url, 'utf-8')),
