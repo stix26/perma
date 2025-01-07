@@ -518,7 +518,7 @@ def parse_warc(warc_file, warc_url):
     response = {target: {key: None for key in ["length", "digest", "offset"]} for target in targets}
     f = io.StringIO()
     with redirect_stdout(f):
-        indexer = Indexer(fields=["offset", "length", "warc-target-uri", "warc-payload-digest"], inputs=[warc_file], output='-')
+        indexer = Indexer(fields=["offset", "length", "warc-target-uri", "warc-block-digest"], inputs=[warc_file], output='-')
         indexer.process_all()
     out = f.getvalue()
     index = [json.loads(o) for o in out.split("\n") if o]
@@ -528,7 +528,7 @@ def parse_warc(warc_file, warc_url):
                 if entry["warc-target-uri"] == target:
                     response[target]["length"] = entry["length"]
                     response[target]["offset"] = entry["offset"]
-                    response[target]["digest"] = entry["warc-payload-digest"]
+                    response[target]["digest"] = entry["warc-block-digest"]
     return response
 
 
@@ -559,7 +559,7 @@ def preserve_perma_wacz(uploaded_file, warc_url, mime_type, guid, url, title, ti
         write_perma_warc_header(warc, guid, timestamp)
 
         uploaded_file.file.seek(0)
-        write_resource_record_from_asset(uploaded_file.file.read(), warc_url, mime_type, warc)
+        write_resource_record_from_asset(uploaded_file.file.read(), warc_url, mime_type, ts_string, warc)
 
         # create provenance summary and add it to the WARC
         provenance = loader.get_template("provenance-summary.html")
@@ -568,6 +568,7 @@ def preserve_perma_wacz(uploaded_file, warc_url, mime_type, guid, url, title, ti
             provenance.render(context).encode(),
             "file:///provenance-summary.html",
             "text/html",
+            ts_string,
             warc
         )
         warc.close()
@@ -602,7 +603,7 @@ def preserve_perma_wacz(uploaded_file, warc_url, mime_type, guid, url, title, ti
                 "length": selected_warc_headers[target]["length"],
                 "offset": selected_warc_headers[target]["offset"],
                 "filename":"data.warc.gz"
-            }) for target in targets
+            }).replace(" ", "") for target in targets
         }
         ts = timestamp.strftime("%Y%m%d%H%M%S")
         index = "\n".join(
@@ -755,18 +756,17 @@ def make_detailed_warcinfo(filename, guid, coll_title, coll_desc, rec_title, pag
     return writer.get_contents()
 
 
-def write_resource_record_from_asset(data, url, content_type, out_file, extra_headers=None):
+def write_resource_record_from_asset(data, url, content_type, warc_date, out_file, extra_headers=None):
     """
     Constructs a single WARC resource record from an asset (screenshot, uploaded file, etc.)
     and writes to out_file.
     """
-    warc_date = warctools.warc.warc_datetime_str(timezone.now()).replace(b'+00:00Z', b'Z')
     headers = [
-        (warctools.WarcRecord.TYPE, warctools.WarcRecord.RESPONSE),
+        (warctools.WarcRecord.TYPE, warctools.WarcRecord.RESOURCE),
         (warctools.WarcRecord.ID, warctools.WarcRecord.random_warc_uuid()),
-        (warctools.WarcRecord.DATE, warc_date),
+        (warctools.WarcRecord.DATE, bytes(warc_date, 'utf-8')),
         (warctools.WarcRecord.URL, bytes(url, 'utf-8')),
-        (warctools.WarcRecord.PAYLOAD_DIGEST, bytes(f'sha256:{hashlib.sha256(data).hexdigest()}', 'utf-8'))
+        (warctools.WarcRecord.BLOCK_DIGEST, bytes(f'sha256:{hashlib.sha256(data).hexdigest()}', 'utf-8'))
     ]
     if extra_headers:
         headers.extend(extra_headers)
