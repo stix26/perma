@@ -1,10 +1,11 @@
 from collections import OrderedDict
-from contextlib import contextmanager
+from contextlib import contextmanager, redirect_stdout
 import csv
 from datetime import datetime, timedelta
 from datetime import timezone as tz
 from functools import reduce, wraps
 import hashlib
+import io
 import itertools
 import json
 import logging
@@ -47,7 +48,7 @@ import requests
 import surt
 import tempdir
 from ua_parser import user_agent_parser
-from warcio.archiveiterator import ArchiveIterator
+from warcio.indexer import Indexer
 from warcio.warcwriter import BufferWARCWriter
 
 from perma.exceptions import (
@@ -512,22 +513,22 @@ def now():
 
 
 def parse_warc(warc_file, warc_url):
-    """ Gets length and digest for uploaded file as well as provenance file """
+    """ Gets length, digest, and offset for uploaded file as well as provenance file """
     targets = [warc_url, "file:///provenance-summary.html"]
     response = {target: {key: None for key in ["length", "digest", "offset"]} for target in targets}
-    with open(warc_file, 'rb') as stream:
-        archive = ArchiveIterator(stream)
-        for record in archive:
-            headers = record.rec_headers.headers
+    f = io.StringIO()
+    with redirect_stdout(f):
+        indexer = Indexer(fields=["offset", "length", "warc-target-uri", "warc-payload-digest"], inputs=[warc_file], output='-')
+        indexer.process_all()
+    out = f.getvalue()
+    index = [json.loads(o) for o in out.split("\n") if o]
+    for entry in index:
+        if "warc-target-uri" in entry:
             for target in targets:
-                if any([h[1] == target for h in headers]):
-                    response[target]["length"] = [
-                        h[1] for h in headers if h[0] == "Content-Length"
-                    ][0]
-                    response[target]["digest"] = [
-                        h[1] for h in headers if h[0] == "WARC-Block-Digest"
-                    ][0]
-                    response[target]["offset"] = archive.offset
+                if entry["warc-target-uri"] == target:
+                    response[target]["length"] = entry["length"]
+                    response[target]["offset"] = entry["offset"]
+                    response[target]["digest"] = entry["warc-payload-digest"]
     return response
 
 
@@ -765,7 +766,7 @@ def write_resource_record_from_asset(data, url, content_type, out_file, extra_he
         (warctools.WarcRecord.ID, warctools.WarcRecord.random_warc_uuid()),
         (warctools.WarcRecord.DATE, warc_date),
         (warctools.WarcRecord.URL, bytes(url, 'utf-8')),
-        (warctools.WarcRecord.BLOCK_DIGEST, bytes(f'sha256:{hashlib.sha256(data).hexdigest()}', 'utf-8'))
+        (warctools.WarcRecord.PAYLOAD_DIGEST, bytes(f'sha256:{hashlib.sha256(data).hexdigest()}', 'utf-8'))
     ]
     if extra_headers:
         headers.extend(extra_headers)
