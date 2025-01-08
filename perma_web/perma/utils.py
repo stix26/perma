@@ -544,13 +544,15 @@ def sha256(input_file, buf_size=65536):
     return sha256.hexdigest()
 
 
-def preserve_perma_wacz(uploaded_file, warc_url, mime_type, guid, url, title, timestamp, wacz_destination):
+def preserve_perma_wacz(uploaded_file, warc_url, mime_type, guid, url, title, creation_timestamp, wacz_destination):
     """
     Creates and writes a perma WACZ for a user upload, returning the WACZ size.
     This necessarily creates a WARC, but we no longer save it.
     """
-    # the timestamps here are from Link's creation_timestamp, and have "+00:00" at the end, so
-    ts_string = timestamp.isoformat().partition("+")[0] + "Z"
+    timestamp = datetime.utcnow()
+    ts_string = timestamp.isoformat() + "Z"
+    # Link's creation_timestamp has "+00:00" at the end, so
+    creation_ts_string = creation_timestamp.isoformat().partition("+")[0] + "Z"
 
     with tempfile.TemporaryDirectory() as tmpdir:
         # prepare WARC...
@@ -563,7 +565,12 @@ def preserve_perma_wacz(uploaded_file, warc_url, mime_type, guid, url, title, ti
 
         # create provenance summary and add it to the WARC
         provenance = loader.get_template("provenance-summary.html")
-        context = {"url": url, "now": ts_string}
+        context = {
+            "url": url,
+            "now": ts_string,
+            "mime_type": mime_type,
+            "creation_timestamp": creation_ts_string
+        }
         write_resource_record_from_asset(
             provenance.render(context).encode(),
             "file:///provenance-summary.html",
