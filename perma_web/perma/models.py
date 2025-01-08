@@ -1994,7 +1994,7 @@ class Link(DeletableModel):
             role='primary',
             status='success',
             record_type='resource',
-            user_upload='True',
+            user_upload=True,
             content_type=mime_type,
             url=warc_url
         )
@@ -2004,7 +2004,7 @@ class Link(DeletableModel):
             role='provenance_summary',
             status='success',
             record_type='resource',
-            user_upload='True',
+            user_upload=False,
             content_type='text/html',
             url='file:///provenance-summary.html'
         )
