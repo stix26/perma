@@ -723,7 +723,7 @@ def write_perma_warc_header(out_file, guid, timestamp):
     ]
     warcinfo_fields = [
         b'operator: Perma.cc',
-        b'format: WARC File Format 1.0',
+        b'format: WARC file version 1.0',
         bytes(f'Perma-GUID: {guid}', 'utf-8')
     ]
     data = b'\r\n'.join(warcinfo_fields) + b'\r\n'
@@ -748,7 +748,7 @@ def make_detailed_warcinfo(filename, guid, coll_title, coll_desc, rec_title, pag
     writer = BufferWARCWriter(gzip=True)
     params = OrderedDict([('operator', 'Perma.cc download'),
                           ('Perma-GUID', guid),
-                          ('format', 'WARC File Format 1.0'),
+                          ('format', 'WARC file version 1.0'),
                           ('json-metadata', json.dumps(coll_metadata))])
 
     record = writer.create_warcinfo_record(filename, params)
