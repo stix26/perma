@@ -1973,7 +1973,7 @@ class Link(DeletableModel):
                 )
             return "\n".join([json.dumps(row) for row in jsonl_rows])
 
-    def write_uploaded_file(self, uploaded_file, cache_break=False):
+    def write_uploaded_file(self, uploaded_file):
         """
             Given a file uploaded by a user, create a Capture record and WACZ.
         """
@@ -1983,11 +1983,6 @@ class Link(DeletableModel):
         mime_type = get_mime_type(uploaded_file.name)
         file_name = f'upload.{mime_type_lookup[mime_type]["new_extension"]}'
         warc_url = f"file:///{self.guid}/{file_name}"
-
-        # append a random number to warc_url if we're replacing a file, to avoid browser cache
-        if cache_break:
-            r = random.SystemRandom()
-            warc_url += f"?version={str(r.random()).replace('.', '')}"
 
         upload_capture = Capture(
             link=self,
