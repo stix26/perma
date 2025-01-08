@@ -628,7 +628,7 @@ def preserve_perma_wacz(uploaded_file, warc_url, mime_type, guid, url, title, cr
             "description": f"User upload for {url}",
             "mainPageURL": warc_url,
             "created": ts_string,
-            "software": "Perma.cc",  # version?
+            "software": f"Perma.cc {settings.PERMA_VERSION}",
             "resources": [
                 {
                     "name": "pages.jsonl",
