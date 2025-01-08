@@ -163,7 +163,7 @@ class LinkAuthorizationTestCase(LinkAuthorizationMixin, ApiResourceTestCase):
                                   data={'file':file_content})
 
         self.assertTrue(Capture.objects.filter(link_id=self.link.pk, role='primary').exclude(pk=old_primary_capture.pk).exists())
-        self.assertTrue(Capture.objects.filter(link_id=self.link.pk, role='provenance_summary').exclude(pk=old_primary_capture.pk).exists())
+        self.assertTrue(Capture.objects.filter(link_id=self.link.pk, role='provenance_summary').exists())
 
         self.link.refresh_from_db()
 
