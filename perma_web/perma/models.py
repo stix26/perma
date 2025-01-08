@@ -1989,13 +1989,25 @@ class Link(DeletableModel):
             r = random.SystemRandom()
             warc_url += f"?version={str(r.random()).replace('.', '')}"
 
-        capture = Capture(link=self,
-                          role='primary',
-                          status='success',
-                          record_type='resource',
-                          user_upload='True',
-                          content_type=mime_type,
-                          url=warc_url)
+        upload_capture = Capture(
+            link=self,
+            role='primary',
+            status='success',
+            record_type='resource',
+            user_upload='True',
+            content_type=mime_type,
+            url=warc_url
+        )
+
+        provenance_capture = Capture(
+            link=self,
+            role='provenance_summary',
+            status='success',
+            record_type='resource',
+            user_upload='True',
+            content_type='text/html',
+            url='file:///provenance-summary.html'
+        )
 
         # make the WACZ
         self.wacz_size = preserve_perma_wacz(
@@ -2013,7 +2025,8 @@ class Link(DeletableModel):
         self.captured_by_software = 'upload'
         self.captured_by_browser = None
         self.save(update_fields=['captured_by_software', 'captured_by_browser', 'warc_size', 'wacz_size'])
-        capture.save()
+        upload_capture.save()
+        provenance_capture.save()
 
     def safe_delete_warc(self):
         old_name = self.warc_storage_file()
