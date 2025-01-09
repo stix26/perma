@@ -82,11 +82,11 @@ services:
   # Perma Payments
   #
   pp_db:
-    image: registry.lil.tools/library/postgres:12.8
+    image: registry.lil.tools/library/postgres:16.6
     environment:
       - POSTGRES_PASSWORD=example
     volumes:
-      - pp_db_data:/var/lib/postgresql/data:delegated
+      - pp_db_data_16:/var/lib/postgresql/data:delegated
     networks:
       - perma_payments
 
