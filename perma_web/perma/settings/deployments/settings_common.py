@@ -625,6 +625,10 @@ SENTRY_SEND_DEFAULT_PII = False
 # Before deployment, we suppress the addition of new capture jobs when this file is present
 DEPLOYMENT_SENTINEL = '/tmp/perma-deployment-pending'
 
+# for inclusion in datapackage.json for user uploads; to be replaced with a
+# short commit hash in deployments
+PERMA_VERSION = 'dev'
+
 # Which settings should be available in all Django templates,
 # without needing to explicitly pass them via the view?
 TEMPLATE_VISIBLE_SETTINGS = (

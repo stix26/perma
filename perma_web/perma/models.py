@@ -49,13 +49,12 @@ from perma.utils import (
     first_day_of_next_month,
     pp_date_from_post,
     prep_for_perma_payments,
-    preserve_perma_warc,
+    preserve_perma_wacz,
     process_perma_payments_transmission,
     protocol,
     remove_control_characters,
     today_next_year,
     tz_datetime,
-    write_resource_record_from_asset,
 )
 
 logger = logging.getLogger(__name__)
@@ -1974,9 +1973,9 @@ class Link(DeletableModel):
                 )
             return "\n".join([json.dumps(row) for row in jsonl_rows])
 
-    def write_uploaded_file(self, uploaded_file, cache_break=False):
+    def write_uploaded_file(self, uploaded_file):
         """
-            Given a file uploaded by a user, create a Capture record and warc.
+            Given a file uploaded by a user, create a Capture record and WACZ.
         """
         from api.utils import get_mime_type, mime_type_lookup  # local import to avoid circular import
 
@@ -1985,27 +1984,44 @@ class Link(DeletableModel):
         file_name = f'upload.{mime_type_lookup[mime_type]["new_extension"]}'
         warc_url = f"file:///{self.guid}/{file_name}"
 
-        # append a random number to warc_url if we're replacing a file, to avoid browser cache
-        if cache_break:
-            r = random.SystemRandom()
-            warc_url += f"?version={str(r.random()).replace('.', '')}"
+        upload_capture = Capture(
+            link=self,
+            role='primary',
+            status='success',
+            record_type='resource',
+            user_upload=True,
+            content_type=mime_type,
+            url=warc_url
+        )
 
-        capture = Capture(link=self,
-                          role='primary',
-                          status='success',
-                          record_type='resource',
-                          user_upload='True',
-                          content_type=mime_type,
-                          url=warc_url)
-        warc_size = []  # pass a mutable container to the context manager, so that it can populate it with the size of the finished warc
-        with preserve_perma_warc(self.guid, self.creation_timestamp, self.warc_storage_file(), warc_size) as warc:
-            uploaded_file.file.seek(0)
-            write_resource_record_from_asset(uploaded_file.file.read(), warc_url, mime_type, warc)
+        provenance_capture = Capture(
+            link=self,
+            role='provenance_summary',
+            status='success',
+            record_type='resource',
+            user_upload=False,
+            content_type='text/html',
+            url='file:///provenance-summary.html'
+        )
+
+        # make the WACZ
+        self.wacz_size = preserve_perma_wacz(
+            uploaded_file,
+            warc_url,
+            mime_type,
+            self.guid,
+            self.submitted_url,
+            self.submitted_title,
+            self.creation_timestamp,
+            self.wacz_storage_file()
+        )
+        self.warc_size = 0  # necessary?
+
         self.captured_by_software = 'upload'
         self.captured_by_browser = None
-        self.warc_size = warc_size[0]
-        self.save(update_fields=['captured_by_software', 'captured_by_browser', 'warc_size'])
-        capture.save()
+        self.save(update_fields=['captured_by_software', 'captured_by_browser', 'warc_size', 'wacz_size'])
+        upload_capture.save()
+        provenance_capture.save()
 
     def safe_delete_warc(self):
         old_name = self.warc_storage_file()
