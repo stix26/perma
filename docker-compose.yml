@@ -11,13 +11,13 @@ services:
     volumes:
       - redis_data:/data:delegated
   db:
-    image: registry.lil.tools/library/postgres:12.11
+    image: registry.lil.tools/library/postgres:16.6
     environment:
       POSTGRES_PASSWORD: password
       POSTGRES_DB: perma
       POSTGRES_USER: perma
     volumes:
-      - postgres_data:/var/lib/postgresql/data:delegated
+      - postgres_data_16:/var/lib/postgresql/data:delegated
     networks:
       - default
       - superset
@@ -140,9 +140,9 @@ services:
 
 volumes:
   node_modules:
-  postgres_data:
+  postgres_data_16:
   redis_data:
-  pp_db_data:
+  pp_db_data_16:
   scoop_redis_data:
   scoop_postgres_data:
   scoop_access_key:
