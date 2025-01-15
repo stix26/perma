@@ -5362,6 +5362,13 @@ section .caption {
   }
 }
 
+#supporting-partners a img.wide {
+  padding: $grid;
+  @include respond-tablet {
+    padding: $double;
+  }
+}
+
 .row-stats {
   margin-bottom: $grid;
   margin-top: $grid * 3;

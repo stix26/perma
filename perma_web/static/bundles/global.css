@@ -11980,6 +11980,15 @@ section .caption a, section .caption p a.perma, p section .caption a.perma {
   }
 }
 
+#supporting-partners a img.wide {
+  padding: 8px;
+}
+@media only screen and (min-width: 768px) {
+  #supporting-partners a img.wide {
+    padding: 16px;
+  }
+}
+
 .row-stats {
   margin-bottom: 8px;
   margin-top: 24px;
