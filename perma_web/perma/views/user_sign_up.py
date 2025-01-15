@@ -1,5 +1,6 @@
 import logging
 import re
+import uuid
 
 from django.conf import settings
 from django.contrib import messages
@@ -448,7 +449,7 @@ def email_library_registrar_request(request: HttpRequest, pending_registrar: Reg
         email = request.POST.get('a-e-address')
 
     send_admin_email(
-        'Perma.cc new library registrar account request',
+        f"Perma.cc new library registrar account request ({str(uuid.uuid4())})",
         email,
         request,
         'email/admin/registrar_request.txt',
@@ -485,7 +486,7 @@ def email_court_request(request, user):
     except LinkUser.DoesNotExist:
         target_user = None
     send_admin_email(
-        "Perma.cc new library court account information request",
+        f"Perma.cc new library court account information request ({str(uuid.uuid4())})",
         user.raw_email,
         request,
         "email/admin/court_request.txt",
@@ -530,7 +531,7 @@ def email_firm_request(request: HttpRequest, registrar: Registrar):
         ),
     }
     send_user_email_copy_admins(
-        title='Perma.cc new paid registrar account request',
+        title=f"Perma.cc new paid registrar account request ({str(uuid.uuid4())})",
         from_address=settings.DEFAULT_FROM_EMAIL,
         to_addresses=[user_email],
         request=request,
@@ -544,7 +545,7 @@ def email_premium_request(request, user):
     Send email to Perma.cc admins when a user requests a premium account
     """
     send_admin_email(
-        "Perma.cc premium account request",
+        f"Perma.cc premium account request ({str(uuid.uuid4())})",
         user.raw_email,
         request,
         "email/admin/premium_request.txt",

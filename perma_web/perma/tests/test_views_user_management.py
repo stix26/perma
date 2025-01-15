@@ -1383,7 +1383,7 @@ class UserManagementViewsTestCase(PermaTestCase):
         id = Registrar.objects.get(email=new_lib['email']).id
         approve_url = "http://testserver{}".format(reverse('user_sign_up_approve_pending_registrar', args=[id]))
         self.assertIn(approve_url, message.body)
-        self.assertEqual(message.subject, "Perma.cc new library registrar account request")
+        self.assertTrue(message.subject.startswith("Perma.cc new library registrar account request"))
         self.assertEqual(message.from_email, our_address)
         self.assertEqual(message.recipients(), [our_address])
         self.assertDictEqual(message.extra_headers, {'Reply-To': user['raw_email']})
@@ -1598,7 +1598,7 @@ class UserManagementViewsTestCase(PermaTestCase):
         our_address = settings.DEFAULT_FROM_EMAIL
 
         # Doesn't check email contents yet; too many variations possible presently
-        self.assertEqual(message.subject, "Perma.cc new library court account information request")
+        self.assertTrue(message.subject.startswith("Perma.cc new library court account information request"))
         self.assertEqual(message.from_email, our_address)
         self.assertEqual(message.recipients(), [our_address])
         self.assertDictEqual(message.extra_headers, {'Reply-To': court_email})
@@ -1743,7 +1743,7 @@ class UserManagementViewsTestCase(PermaTestCase):
     def check_firm_email(self, message: str, firm_email: str):
         perma_admin_email = settings.DEFAULT_FROM_EMAIL
 
-        self.assertEqual(message.subject, 'Perma.cc new paid registrar account request')
+        self.assertTrue(message.subject.startswith('Perma.cc new paid registrar account request'))
         self.assertEqual(message.from_email, perma_admin_email)
         self.assertEqual(message.to, [firm_email.lower()])
         self.assertEqual(message.cc, [perma_admin_email])
