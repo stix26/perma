@@ -45,7 +45,7 @@ def sign_up_libraries(request):
     """
     if request.method == 'POST':
 
-        if something_took_the_bait := check_honeypot(request, 'register_library_instructions', 'a-telephone', check_js=True):
+        if something_took_the_bait := check_honeypot(request, 'register_library_instructions', 'a-email_confirmation', check_js=True):
             return something_took_the_bait
 
         registrar_form = LibraryRegistrarForm(request.POST, request.FILES, prefix ="b")
@@ -54,7 +54,7 @@ def sign_up_libraries(request):
         else:
             user_form = UserForm(request.POST, prefix = "a")
             user_form.fields['email'].label = "Your email"
-        user_email = request.POST.get('a-e-address', '').lower()
+        user_email = request.POST.get('a-address', '').lower()
         try:
             target_user = LinkUser.objects.get(email=user_email)
         except LinkUser.DoesNotExist:
@@ -130,7 +130,7 @@ def sign_up_courts(request):
             return something_took_the_bait
 
         form = CreateUserFormWithCourt(request.POST)
-        submitted_email = request.POST.get('e-address', '').lower()
+        submitted_email = request.POST.get('address', '').lower()
 
         try:
             target_user = LinkUser.objects.get(email=submitted_email)
@@ -174,12 +174,12 @@ def sign_up_firms(request: HttpRequest):
     """Display the sign-up page for submitting a firm/other org request."""
     if request.method == 'POST':
         something_took_the_bait = check_honeypot(
-            request, 'register_email_instructions', honey_pot_fieldname='a-telephone', check_js=True
+            request, 'register_email_instructions', honey_pot_fieldname='a-email_confirmation', check_js=True
         )
         if something_took_the_bait:
             return something_took_the_bait
 
-        user_email = request.POST.get('a-e-address', '').lower()
+        user_email = request.POST.get('a-address', '').lower()
         user_form = CreateUserFormWithFirm(request.POST, prefix='a')
         registrar_form = FirmRegistrarForm(request.POST)
         usage_form = FirmUsageForm(request.POST)
@@ -446,7 +446,7 @@ def email_library_registrar_request(request: HttpRequest, pending_registrar: Reg
         email = request.user.raw_email
     except AttributeError:
         # User did not have an account
-        email = request.POST.get('a-e-address')
+        email = request.POST.get('a-address')
 
     send_admin_email(
         f"Perma.cc new library registrar account request ({str(uuid.uuid4())})",
@@ -512,7 +512,7 @@ def email_firm_request(request: HttpRequest, registrar: Registrar):
     user_name = ' '.join(
         [user_form.data.get('a-first_name', ''), user_form.data.get('a-last_name', '')]
     ).strip()
-    user_email = user_form.data['a-e-address'].lower()
+    user_email = user_form.data['a-address'].lower()
 
     try:
         existing_user = LinkUser.objects.get(email=user_email)
