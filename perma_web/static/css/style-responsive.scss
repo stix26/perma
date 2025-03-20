@@ -3136,11 +3136,11 @@ button#addlink,
 }
 
 .contact-form {
-  // hide telephone so it will only be filled by spam bots
-  label[for="id_telephone"] {
+  // hide email_conformation so it will only be filled by spam bots
+  label[for="id_email_confirmation"] {
     display: none;
   }
-  textarea[name="telephone"] {
+  textarea[name="email_confirmation"] {
     display: none;
   }
 }
@@ -3154,11 +3154,11 @@ button#addlink,
 }
 
 .signup-learnMore-form, .add-user, .change-user {
-  // hide telephone so it will only be filled by spam bots
-  label[for="id_telephone"], label[for="id_a-telephone"] {
+  // hide email_confirmation so it will only be filled by spam bots
+  label[for="id_email_confirmation"], label[for="id_a-email_confirmation"] {
     display: none;
   }
-  input[name="telephone"], input[name="a-telephone"] {
+  input[name="email_confirmation"], input[name="a-email_confirmation"] {
     display: none;
   }
 }

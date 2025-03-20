@@ -24,7 +24,7 @@ logger = logging.getLogger(__name__)
 
 ### HELPERS ###
 
-def check_honeypot(request, redirect_to_view, honey_pot_fieldname='telephone', check_js=False):
+def check_honeypot(request, redirect_to_view, honey_pot_fieldname='email_confirmation', check_js=False):
     def reject_request():
         user_ip = get_client_ip(request)
         logger.info(f"Suppressing invalid form submission from {user_ip}: {request.POST}")
@@ -203,15 +203,15 @@ class UserForm(forms.ModelForm):
     """
     User add form.
     """
-    telephone = forms.CharField(label="Do not fill out this box", required=False)  # field to fool bots
+    email_confirmation = forms.CharField(label="Email confirmation: humans, do not fill out this box", required=False)  # field to fool bots
 
     class Meta:
         model = LinkUser
-        fields = ["first_name", "last_name", "email", "telephone"]
+        fields = ["first_name", "last_name", "email", "email_confirmation"]
 
     def add_prefix(self, field_name):
         # rename the email field in the HTML to foil bots that are spamming us
-        field_name = "e-address" if field_name == "email" else field_name
+        field_name = "address" if field_name == "email" else field_name
         return super().add_prefix(field_name)
 
     def __init__(self, *args, **kwargs):
@@ -685,7 +685,7 @@ class ContactForm(forms.Form):
     email = forms.EmailField(label="Your email address")
     registrar = forms.ChoiceField(choices = (), label = 'Your library')
     subject = forms.CharField(widget=forms.HiddenInput, required=False)
-    telephone = forms.CharField(label="Do not fill out this box", required=False, widget=forms.Textarea)  # fake message box to fool bots
+    email_confirmation = forms.CharField(label="Email confirmation: humans, do not fill out this box", required=False, widget=forms.Textarea)  # fake message box to fool bots
     box2 = forms.CharField(label="Message", widget=forms.Textarea)
     referer = forms.URLField(widget=forms.HiddenInput, required=False)
 
@@ -709,7 +709,7 @@ class ReportForm(forms.Form):
         widget=forms.Textarea
     )
     email = forms.EmailField(label="Your email address")
-    telephone = forms.CharField(label="Do not fill out this box", required=False, widget=forms.Textarea)  # fake message box to fool bots
+    email_confirmation = forms.CharField(label="Email confirmation: humans, do not fill out this box", required=False, widget=forms.Textarea)  # fake message box to fool bots
     guid = forms.CharField(widget=forms.HiddenInput, required=False)
     referer = forms.CharField(widget=forms.HiddenInput, required=False)
 

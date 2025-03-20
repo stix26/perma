@@ -650,7 +650,7 @@ class UserManagementViewsTestCase(PermaTestCase):
             email += '1'
             normalized_email += '1'
             self.submit_form('user_management_' + view_name + '_add_user',
-                           data=dict(list(base_user.items()) + list(form_extras.items()) + [['a-e-address', email]]),
+                           data=dict(list(base_user.items()) + list(form_extras.items()) + [['a-address', email]]),
                            success_url=reverse('user_management_manage_' + view_name),
                            success_query=LinkUser.objects.filter(email=normalized_email, raw_email=email))
             new_user = LinkUser.objects.get(email=normalized_email)
@@ -683,7 +683,7 @@ class UserManagementViewsTestCase(PermaTestCase):
                          data={'a-organizations': self.organization.pk,
                                'a-first_name': 'First',
                                'a-last_name': 'Last',
-                               'a-e-address': email},
+                               'a-address': email},
                          query_params={'email': email},
                          success_url=reverse('user_management_manage_organization_user'),
                          success_query=LinkUser.objects.filter(
@@ -784,7 +784,7 @@ class UserManagementViewsTestCase(PermaTestCase):
                          data={'a-organizations': self.unrelated_organization.pk,
                                'a-first_name': 'First',
                                'a-last_name': 'Last',
-                               'a-e-address': 'doesnotexist@example.com'},
+                               'a-address': 'doesnotexist@example.com'},
                          query_params={'email': 'doesnotexist@example.com'},
                          error_keys=['organizations'])
         self.assertFalse(LinkUser.objects.filter(email='doesnotexist@example.com',
@@ -796,7 +796,7 @@ class UserManagementViewsTestCase(PermaTestCase):
                          data={'a-organizations': self.unrelated_organization.pk,
                                'a-first_name': 'First',
                                'a-last_name': 'Last',
-                               'a-e-address': 'doesnotexist@example.com'},
+                               'a-address': 'doesnotexist@example.com'},
                          query_params={'email': 'doesnotexist@example.com'},
                          error_keys=['organizations'])
         self.assertFalse(LinkUser.objects.filter(email='doesnotexist@example.com',
@@ -988,7 +988,7 @@ class UserManagementViewsTestCase(PermaTestCase):
                           data={'a-sponsoring_registrars': self.registrar.pk,
                                 'a-first_name': 'First',
                                 'a-last_name': 'Last',
-                                'a-e-address': address},
+                                'a-address': address},
                           query_params={'email': address},
                           success_url=reverse('user_management_manage_sponsored_user'))
 
@@ -1010,7 +1010,7 @@ class UserManagementViewsTestCase(PermaTestCase):
                                      data={'a-sponsoring_registrars': self.registrar.pk,
                                            'a-first_name': 'First',
                                            'a-last_name': 'Last',
-                                           'a-e-address': scrambled_email},
+                                           'a-address': scrambled_email},
                                      query_params={'email': scrambled_email}).content
         self.assertIn(bytes("Select a valid choice. That choice is not one of the available choices", 'utf-8'), response)
 
@@ -1022,7 +1022,7 @@ class UserManagementViewsTestCase(PermaTestCase):
                          data={'a-sponsoring_registrars': self.registrar.pk,
                                'a-first_name': 'First',
                                'a-last_name': 'Last',
-                               'a-e-address': address},
+                               'a-address': address},
                          query_params={'email': address},
                          success_url=reverse('user_management_manage_sponsored_user'),
                          success_query=LinkUser.objects.filter(
@@ -1037,7 +1037,7 @@ class UserManagementViewsTestCase(PermaTestCase):
                                      data={'a-sponsoring_registrars': self.registrar.pk,
                                            'a-first_name': 'First',
                                            'a-last_name': 'Last',
-                                           'a-e-address': scrambled_email},
+                                           'a-address': scrambled_email},
                                      query_params={'email': scrambled_email}).content
         self.assertIn(bytes("{} is already sponsored by your registrar.".format(normalized_address), 'utf-8'), response)
 
@@ -1047,7 +1047,7 @@ class UserManagementViewsTestCase(PermaTestCase):
                          data={'a-sponsoring_registrars': self.unrelated_registrar.pk,
                                'a-first_name': 'First',
                                'a-last_name': 'Last',
-                               'a-e-address': 'doesnotexist@example.com'},
+                               'a-address': 'doesnotexist@example.com'},
                          query_params={'email': 'doesnotexist@example.com'},
                          error_keys=['sponsoring_registrars'])
         self.assertFalse(LinkUser.objects.filter(email='doesnotexist@example.com',
@@ -1154,7 +1154,7 @@ class UserManagementViewsTestCase(PermaTestCase):
                           data={'a-registrar': self.registrar.pk,
                                 'a-first_name': 'First',
                                 'a-last_name': 'Last',
-                                'a-e-address': address},
+                                'a-address': address},
                           query_params={'email': address},
                           success_url=reverse('user_management_manage_registrar_user'),
                           success_query=LinkUser.objects.filter(
@@ -1171,7 +1171,7 @@ class UserManagementViewsTestCase(PermaTestCase):
                          data={'a-registrar': self.registrar.pk,
                                'a-first_name': 'First',
                                'a-last_name': 'Last',
-                               'a-e-address': address},
+                               'a-address': address},
                          query_params={'email': address},
                          success_url=reverse('user_management_manage_registrar_user'),
                          success_query=LinkUser.objects.filter(
@@ -1186,7 +1186,7 @@ class UserManagementViewsTestCase(PermaTestCase):
                                      data={'a-registrar': self.registrar.pk,
                                            'a-first_name': 'First',
                                            'a-last_name': 'Last',
-                                           'a-e-address': scrambled_email},
+                                           'a-address': scrambled_email},
                                      query_params={'email': scrambled_email}).content
         self.assertIn(bytes("{} is already a registrar user for your registrar.".format(normalized_address), 'utf-8'), response)
 
@@ -1196,7 +1196,7 @@ class UserManagementViewsTestCase(PermaTestCase):
                          data={'a-registrar': self.unrelated_registrar.pk,
                                'a-first_name': 'First',
                                'a-last_name': 'Last',
-                               'a-e-address': 'doesnotexist@example.com'},
+                               'a-address': 'doesnotexist@example.com'},
                          query_params={'email': 'doesnotexist@example.com'},
                          error_keys=['registrar'])
         self.assertFalse(LinkUser.objects.filter(email='doesnotexist@example.com',
@@ -1302,7 +1302,7 @@ class UserManagementViewsTestCase(PermaTestCase):
         self.submit_form('user_management_admin_user_add_user',
                          data={'a-first_name': 'First',
                                'a-last_name': 'Last',
-                               'a-e-address': address},
+                               'a-address': address},
                          query_params={'email': address},
                          success_url=reverse('user_management_manage_admin_user'),
                          success_query=LinkUser.objects.filter(
@@ -1369,7 +1369,7 @@ class UserManagementViewsTestCase(PermaTestCase):
         self.assertEqual(website_label.text, "Library website")
 
     def check_lib_user_labels(self, soup):
-        email_label = soup.find('label', {'for': 'id_a-e-address'})
+        email_label = soup.find('label', {'for': 'id_a-address'})
         self.assertEqual(email_label.text, "Your email")
 
     def check_lib_email(self, message, new_lib, user):
@@ -1405,7 +1405,7 @@ class UserManagementViewsTestCase(PermaTestCase):
         inputs = soup.select('input')
         self.assertEqual(len(inputs), 9)
         for input in inputs:
-            if input['name'] in ['csrfmiddlewaretoken', 'telephone']:
+            if input['name'] in ['csrfmiddlewaretoken', 'email_confirmation']:
                 self.assertTrue(input.get('value', ''))
             else:
                 self.assertFalse(input.get('value', ''))
@@ -1419,7 +1419,7 @@ class UserManagementViewsTestCase(PermaTestCase):
                                     'b-website': new_lib['website'],
                                     'b-name': new_lib['name'],
                                     'b-address': new_lib['address'],
-                                    'a-e-address': new_lib_user['raw_email'],
+                                    'a-address': new_lib_user['raw_email'],
                                     'a-first_name': new_lib_user['first'],
                                     'a-last_name': new_lib_user['last'],
                                     'csrfmiddlewaretoken': '11YY3S2DgOw2DHoWVEbBArnBMdEA2svu' }
@@ -1431,7 +1431,7 @@ class UserManagementViewsTestCase(PermaTestCase):
         inputs = soup.select('input')
         self.assertEqual(len(inputs), 9)
         for input in inputs:
-            if input['name'] in ['csrfmiddlewaretoken', 'telephone']:
+            if input['name'] in ['csrfmiddlewaretoken', 'email_confirmation']:
                 self.assertTrue(input.get('value', ''))
             elif input['name'][:2] == "b-":
                 self.assertTrue(input.get('value', ''))
@@ -1474,7 +1474,7 @@ class UserManagementViewsTestCase(PermaTestCase):
                           data = { 'b-email': new_lib['email'],
                                    'b-website': new_lib['website'],
                                    'b-name': new_lib['name'],
-                                   'a-e-address': new_lib_user['raw_email'] },
+                                   'a-address': new_lib_user['raw_email'] },
                           success_url=reverse('register_library_instructions'))
         expected_emails_sent += 2
         self.assertEqual(len(mail.outbox), expected_emails_sent)
@@ -1488,7 +1488,7 @@ class UserManagementViewsTestCase(PermaTestCase):
                           data = { 'b-email': new_lib['email'],
                                    'b-website': new_lib['website'],
                                    'b-name': new_lib['name'],
-                                   'a-e-address': new_lib_user['raw_email'],
+                                   'a-address': new_lib_user['raw_email'],
                                    'a-first_name': new_lib_user['first'],
                                    'a-last_name': new_lib_user['last']},
                           success_url=reverse('register_library_instructions'))
@@ -1521,10 +1521,10 @@ class UserManagementViewsTestCase(PermaTestCase):
                           data = { 'b-email': new_lib['email'],
                                    'b-website': new_lib['website'],
                                    'b-name': new_lib['name'],
-                                   'a-e-address': new_lib_user['raw_email'],
+                                   'a-address': new_lib_user['raw_email'],
                                    'a-first_name': new_lib_user['first'],
                                    'a-last_name': new_lib_user['last'],
-                                   'a-telephone': "I'm a bot."},
+                                   'a-email_confirmation': "I'm a bot."},
                           success_url=reverse('register_library_instructions'))
         self.assertEqual(len(mail.outbox), 0)
         self.assertFalse(Registrar.objects.filter(name=new_lib['name']).exists())
@@ -1559,7 +1559,7 @@ class UserManagementViewsTestCase(PermaTestCase):
         data = {'b-email': new_lib['email'],
                 'b-website': new_lib['website'],
                 'b-name': new_lib['name'],
-                'a-e-address': self.randomize_capitalization(existing_lib_user['email'])}
+                'a-address': self.randomize_capitalization(existing_lib_user['email'])}
         self.submit_form('sign_up_libraries',
                           data = data,
                           form_keys = ['registrar_form', 'user_form'],
@@ -1619,7 +1619,7 @@ class UserManagementViewsTestCase(PermaTestCase):
         # Existing user's email address, no court info
         # (currently succeeds, should probably fail; see issue 1746)
         self.submit_form('sign_up_courts',
-                          data = { 'e-address': self.randomize_capitalization(existing_user['email'])},
+                          data = { 'address': self.randomize_capitalization(existing_user['email'])},
                           success_url = reverse('court_request_response'))
         expected_emails_sent += 1
         self.assertEqual(len(mail.outbox), expected_emails_sent)
@@ -1627,7 +1627,7 @@ class UserManagementViewsTestCase(PermaTestCase):
 
         # Existing user's email address + court info
         self.submit_form('sign_up_courts',
-                          data = { 'e-address': self.randomize_capitalization(existing_user['email']),
+                          data = { 'address': self.randomize_capitalization(existing_user['email']),
                                    'requested_account_note': new_court['requested_account_note']},
                           success_url = reverse('court_request_response'))
         expected_emails_sent += 1
@@ -1636,7 +1636,7 @@ class UserManagementViewsTestCase(PermaTestCase):
 
         # New user email address, don't create account
         self.submit_form('sign_up_courts',
-                          data = { 'e-address': new_user['raw_email'],
+                          data = { 'address': new_user['raw_email'],
                                    'requested_account_note': new_court['requested_account_note']},
                           success_url = reverse('court_request_response'))
         expected_emails_sent += 1
@@ -1645,7 +1645,7 @@ class UserManagementViewsTestCase(PermaTestCase):
 
         # New user email address, create account
         self.submit_form('sign_up_courts',
-                          data = { 'e-address': new_user['raw_email'],
+                          data = { 'address': new_user['raw_email'],
                                    'requested_account_note': new_court['requested_account_note'],
                                    'create_account': True },
                           success_url = reverse('register_email_instructions'))
@@ -1660,7 +1660,7 @@ class UserManagementViewsTestCase(PermaTestCase):
         # (This succeeds and creates a new account; see issue 1749)
         new_user = self.new_court_user()
         self.submit_form('sign_up_courts',
-                          data = { 'e-address': new_user['raw_email'],
+                          data = { 'address': new_user['raw_email'],
                                    'requested_account_note': new_court['requested_account_note'],
                                    'create_account': True },
                           user = existing_user['email'],
@@ -1673,7 +1673,7 @@ class UserManagementViewsTestCase(PermaTestCase):
         # Existing user's email address, not that of the user logged in.
         # (This is odd; see issue 1749)
         self.submit_form('sign_up_courts',
-                          data = { 'e-address': self.randomize_capitalization(existing_user['email']),
+                          data = { 'address': self.randomize_capitalization(existing_user['email']),
                                    'requested_account_note': new_court['requested_account_note'],
                                    'create_account': True },
                           user = another_existing_user['email'],
@@ -1687,10 +1687,10 @@ class UserManagementViewsTestCase(PermaTestCase):
         new_court = self.new_court()
         new_user = self.new_court_user()
         self.submit_form('sign_up_courts',
-                          data = { 'e-address': new_user['raw_email'],
+                          data = { 'email': new_user['raw_email'],
                                    'requested_account_note': new_court['requested_account_note'],
                                    'create_account': True,
-                                   'telephone': "I'm a bot." },
+                                   'email_confirmation': "I'm a bot." },
                           success_url = reverse('register_email_instructions'))
         self.assertEqual(len(mail.outbox), 0)
         self.assertFalse(LinkUser.objects.filter(email__iexact=new_user['raw_email']).exists())
@@ -1762,7 +1762,7 @@ class UserManagementViewsTestCase(PermaTestCase):
         # Existing user's email address, no firm info (should not succeed due to missing values)
         self.submit_form(
             'sign_up_firms',
-            data={'a-e-address': self.randomize_capitalization(existing_user['email'])},
+            data={'a-address': self.randomize_capitalization(existing_user['email'])},
         )
         expected_emails_sent += 0
         self.assertEqual(len(mail.outbox), expected_emails_sent)
@@ -1771,7 +1771,7 @@ class UserManagementViewsTestCase(PermaTestCase):
         self.submit_form(
             'sign_up_firms',
             data={
-                'a-e-address': self.randomize_capitalization(existing_user['email']),
+                'a-address': self.randomize_capitalization(existing_user['email']),
                 'a-registrar_user_candidate': firm_user_form['registrar_user_candidate'],
                 **firm_registrar_form,
                 **firm_usage_form,
@@ -1786,7 +1786,7 @@ class UserManagementViewsTestCase(PermaTestCase):
         self.submit_form(
             'sign_up_firms',
             data={
-                'a-e-address': firm_user_form['raw_email'],
+                'a-address': firm_user_form['raw_email'],
                 'a-registrar_user_candidate': firm_user_form['registrar_user_candidate'],
                 **firm_registrar_form,
                 **firm_usage_form,
@@ -1801,7 +1801,7 @@ class UserManagementViewsTestCase(PermaTestCase):
         self.submit_form(
             'sign_up_firms',
             data={
-                'a-e-address': firm_user_form['raw_email'],
+                'a-address': firm_user_form['raw_email'],
                 'a-registrar_user_candidate': firm_user_form['registrar_user_candidate'],
                 **firm_registrar_form,
                 **firm_usage_form,
@@ -1822,7 +1822,7 @@ class UserManagementViewsTestCase(PermaTestCase):
         self.submit_form(
             'sign_up_firms',
             data={
-                'a-e-address': existing_user['email'],
+                'a-address': existing_user['email'],
                 'a-registrar_user_candidate': firm_user_form['registrar_user_candidate'],
                 **firm_registrar_form,
                 **firm_usage_form,
@@ -1842,9 +1842,9 @@ class UserManagementViewsTestCase(PermaTestCase):
         self.submit_form(
             'sign_up_firms',
             data={
-                'a-e-address': firm_user_form['raw_email'],
+                'a-address': firm_user_form['raw_email'],
                 'create_account': True,
-                'a-telephone': "I'm a bot.",
+                'a-email_confirmation': "I'm a bot.",
                 **firm_registrar_form,
                 **firm_usage_form,
                 'a-registrar_user_candidate': True,
@@ -1907,7 +1907,7 @@ class UserManagementViewsTestCase(PermaTestCase):
         # user registration
         new_user_raw_email = self.randomize_capitalization("new_email@test.com")
         new_user_normalized_email = new_user_raw_email.lower()
-        self.submit_form('sign_up', {'e-address': new_user_raw_email, 'first_name': 'Test', 'last_name': 'Test'},
+        self.submit_form('sign_up', {'address': new_user_raw_email, 'first_name': 'Test', 'last_name': 'Test'},
                          success_url=reverse('register_email_instructions'),
                          success_query=LinkUser.objects.filter(
                              email=new_user_normalized_email,
@@ -1958,7 +1958,7 @@ class UserManagementViewsTestCase(PermaTestCase):
         new_user_email = f'new_user@{registrar_domain}'
         self.submit_form(
             'sign_up',
-            {'e-address': new_user_email, 'first_name': 'Test', 'last_name': 'Test'},
+            {'address': new_user_email, 'first_name': 'Test', 'last_name': 'Test'},
             success_url=reverse('register_email_instructions'),
             success_query=LinkUser.objects.filter(email=new_user_email),
         )
@@ -1980,10 +1980,10 @@ class UserManagementViewsTestCase(PermaTestCase):
     def test_signup_with_existing_email_rejected(self):
         self.assertEqual(LinkUser.objects.filter(email__iexact=self.registrar_user.email).count(), 1)
         self.submit_form('sign_up',
-                         {'e-address': self.registrar_user.email, 'first_name': 'Test', 'last_name': 'Test'},
+                         {'address': self.registrar_user.email, 'first_name': 'Test', 'last_name': 'Test'},
                          error_keys=['email'])
         self.submit_form('sign_up',
-                 {'e-address': self.randomize_capitalization(self.registrar_user.email), 'first_name': 'Test', 'last_name': 'Test'},
+                 {'address': self.randomize_capitalization(self.registrar_user.email), 'first_name': 'Test', 'last_name': 'Test'},
                  error_keys=['email'])
         self.assertEqual(LinkUser.objects.filter(email__iexact=self.registrar_user.email).count(), 1)
 
@@ -1991,8 +1991,8 @@ class UserManagementViewsTestCase(PermaTestCase):
     def test_new_user_form_honeypot(self):
         new_user_email = "new_email@test.com"
         self.submit_form('sign_up',
-                          data = { 'e-address': new_user_email,
-                                   'telephone': "I'm a bot." },
+                          data = { 'address': new_user_email,
+                                   'email_confirmation': "I'm a bot." },
                           success_url = reverse('register_email_instructions'))
         self.assertEqual(len(mail.outbox), 0)
         self.assertFalse(LinkUser.objects.filter(email__iexact=new_user_email).exists())
