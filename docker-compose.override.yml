@@ -52,7 +52,7 @@ services:
       - scoop_rest_api_internal
 
   scoop-rest-api:
-    image: registry.lil.tools/harvardlil/scoop-rest-api:139-938068a487dd23e38bc28fa562375cd3
+    image: registry.lil.tools/harvardlil/scoop-rest-api:140-e56f2df628696f18c8b6c8494f3023ce
     init: true
     tty: true
     depends_on:
