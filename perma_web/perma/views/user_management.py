@@ -1043,7 +1043,31 @@ def manage_single_organization_user_remove(request, user_id):
         if request.user == target_user and not target_user.organizations.exists():
             return HttpResponseRedirect(reverse('create_link'))
 
-    return HttpResponseRedirect(reverse('user_management_manage_organization_user'))
+    return HttpResponseRedirect(reverse('user_management_manage_single_organization_user', args=[user_id]))
+
+
+@user_passes_test_or_403(lambda user: user.is_staff or user.is_registrar_user())
+def manage_single_organization_user_expiration_date(request, user_id, organization_id):
+    """
+        Modify the affiliation expiration date of an org user
+    """
+    target_user = get_object_or_404(LinkUser, id=user_id)
+    organization = get_object_or_404(Organization, id=organization_id)
+    affiliation = get_object_or_404(UserOrganizationAffiliation, organization=organization, user=target_user)
+
+    if not request.user.shares_scope_with_user(target_user):
+        return HttpResponseForbidden()
+    
+    if request.method == 'POST':
+        expires_at = request.POST.get("expires_at") or None
+        affiliation.expires_at = expires_at
+        affiliation.save()
+        return HttpResponseRedirect(reverse('user_management_manage_single_organization_user', args=[user_id]))
+
+    return render(request, 'user_management/manage_organization_affiliation_expiration.html', {
+        'user': target_user,
+        'organization_id': organization.id
+    })
 
 
 @user_passes_test_or_403(lambda user: user.is_registrar_user())
