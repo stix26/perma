@@ -112,6 +112,12 @@ def test_permissions(client, admin_user, registrar_user, org_user, link_user_fac
         },
         {
             'urls': [
+                ['user_management_manage_single_organization_user_expiration_date', {'kwargs': {'user_id': org_user.id, 'organization_id': org_user_org.id}}]
+            ],
+            'allowed': {admin_user, org_user_registrar_user},
+        },
+        {
+            'urls': [
                 ['user_management_manage_single_registrar_user_remove', {'kwargs':{'user_id': registrar_user.id}}],
             ],
             'allowed': {registrar_user}

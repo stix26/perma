@@ -2983,7 +2983,7 @@ div.checkbox {
   padding-left: 36px;
 }
 
-div.checkbox:has(#id_a-indefinite_sponsorship), div.checkbox:has(#indefinite_sponsorship), div.checkbox:has(#id_a-indefinite_affiliation) {
+div.checkbox:has(#id_a-indefinite_sponsorship), div.checkbox:has(#indefinite_sponsorship), div.checkbox:has(#id_a-indefinite_affiliation), div.checkbox:has(#indefinite_affiliation) {
   background-color: inherit;
   padding-left: 0;
   margin-right: 0;
@@ -3184,6 +3184,10 @@ button#addlink,
       bottom: -2px;
     }
   }
+}
+
+.org-user-actions form {
+  display: inline;
 }
 
 // special styling for subscription forms
@@ -6034,4 +6038,13 @@ Example: calc(4rem / 16) is equal to 4px or 0.25rem */
 .fade-enter-from,
 .fade-leave-to {
   opacity: 0;
+}
+
+.modify-org-exp-btn {
+  width: 100%;
+  margin-top: 6px !important;
+  @include respond-tablet {
+    width: auto;
+    margin-top: 0 !important;
+  }
 }

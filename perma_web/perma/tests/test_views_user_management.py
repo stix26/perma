@@ -954,7 +954,7 @@ class UserManagementViewsTestCase(PermaTestCase):
         self.submit_form('user_management_manage_single_organization_user_remove',
                          data={'affiliation': self.user_organization_affiliation.pk},
                          reverse_kwargs={'args': [self.organization_user.pk]},
-                         success_url=reverse('user_management_manage_organization_user'))
+                         success_url=reverse('user_management_manage_single_organization_user', args=[self.organization_user.pk]))
         self.assertFalse(self.organization_user.organizations.filter(pk=self.user_organization_affiliation.pk).exists())
 
     def test_registrar_cannot_remove_unrelated_user_from_organization(self):
@@ -978,6 +978,38 @@ class UserManagementViewsTestCase(PermaTestCase):
                          reverse_kwargs={'args': [self.organization_user.pk]},
                          success_url=reverse('create_link'))
         self.assertFalse(self.organization_user.organizations.filter(pk=self.user_organization_affiliation.pk).exists())
+
+    ### MODIFYING ORG USER AFFILIATION EXPIRATION DATES ###
+
+    def test_admin_user_can_modify_affiliation_of_existing_org_user(self):
+        self.log_in_user(self.admin_user)
+        affiliation = UserOrganizationAffiliation.objects.get(user=self.organization_user, organization=self.organization)
+        affiliation.expires_at = datetime.strptime('2025-04-30T00:00:00+00:00', "%Y-%m-%dT%H:%M:%S%z")
+        affiliation.save()
+        self.submit_form('user_management_manage_single_organization_user_expiration_date',
+                         reverse_kwargs={'args': [self.organization_user.id, self.organization.id]},
+                         data={'expires_at': ''},
+                         success_url=reverse('user_management_manage_single_organization_user', args=[self.organization_user.id]))
+        affiliation.refresh_from_db()
+        self.assertEqual(affiliation.expires_at, None)
+
+    def test_registrar_user_can_modify_affiliation_of_existing_org_user(self):
+        # can only modify user affiliations if registrar is affiliated with the same org
+        self.log_in_user(self.registrar_user)
+        affiliation = UserOrganizationAffiliation.objects.get(user=self.organization_user, organization=self.organization)
+        expires_at = '2025-04-30T00:00:00+00:00'
+        self.submit_form('user_management_manage_single_organization_user_expiration_date',
+                         reverse_kwargs={'args': [self.organization_user.id, self.organization.id]},
+                         data={'expires_at': expires_at},
+                         success_url=reverse('user_management_manage_single_organization_user', args=[self.organization_user.id]))
+        affiliation.refresh_from_db()
+        self.assertEqual(affiliation.expires_at, datetime.strptime(expires_at, "%Y-%m-%dT%H:%M:%S%z"))
+
+        # cannot modify user affiliations if registrar isn't affiliated with the same org
+        self.log_in_user(self.registrar_user)
+        self.submit_form('user_management_manage_single_organization_user_expiration_date',
+                         reverse_kwargs={'args': [self.organization_user.id, self.unrelated_organization.id]},
+                         require_status_code=403)
 
     ### ADDING NEW USERS TO REGISTRARS AS SPONSORED USERS ###
 
