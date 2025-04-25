@@ -984,7 +984,7 @@ class UserManagementViewsTestCase(PermaTestCase):
     def test_admin_user_can_modify_affiliation_of_existing_org_user(self):
         self.log_in_user(self.admin_user)
         affiliation = UserOrganizationAffiliation.objects.get(user=self.organization_user, organization=self.organization)
-        affiliation.expires_at = '2025-12-29'
+        affiliation.expires_at = datetime.strptime('2025-04-30T00:00:00+00:00', "%Y-%m-%dT%H:%M:%S%z")
         affiliation.save()
         self.submit_form('user_management_manage_single_organization_user_expiration_date',
                          reverse_kwargs={'args': [self.organization_user.id, self.organization.id]},
