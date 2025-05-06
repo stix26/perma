@@ -1,4 +1,7 @@
 """
+Tasks for investigating the state of our primary storage and mirrors.
+Some reflect earlier Perma storage architectures and are here for
+historical purposes and future reference.
 """
 from datetime import date, datetime, timezone as tz
 from dateutil.relativedelta import relativedelta
