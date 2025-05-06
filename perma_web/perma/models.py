@@ -2176,6 +2176,7 @@ class CaptureJob(models.Model):
             (1) sorting the capture queue fairly and
             (2) reporting status during a capture.
     """
+    creation_timestamp = models.DateTimeField(auto_now=True, blank=True, null=True, db_index=True)
     link = models.OneToOneField(Link, related_name='capture_job', null=True, blank=True, on_delete=models.CASCADE)
     status = models.CharField(max_length=15,
                               default='invalid',
