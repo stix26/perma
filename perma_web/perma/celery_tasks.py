@@ -379,7 +379,7 @@ def capture_with_scoop(capture_job):
                 logger.warning(f"{capture_job.link_id}: Scoop failed without logs ({poll_data['id_capture']}).")
                 capture_job.link.tags.add('scoop-silent-failure')
             else:
-                logger.error(f"Scoop capture failed: {poll_data}")
+                logger.error(f"Scoop capture of {capture_job.link_id} failed: {poll_data}")
 
     except HaltCaptureException:
         print("HaltCaptureException thrown")
