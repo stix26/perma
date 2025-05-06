@@ -341,16 +341,20 @@ def capture_with_scoop(capture_job):
             wait_time = time.time() - scoop_start_time
             inc_progress(capture_job, min(wait_time/60, 0.99), f"Waiting for Scoop job {capture_job.scoop_job_id} to finish: {poll_data['status']}")
 
-        capture_job.scoop_logs = poll_data
         if poll_data.get('scoop_capture_summary'):
             states = poll_data['scoop_capture_summary']['states']
             state = poll_data['scoop_capture_summary']['state']
             capture_job.scoop_state = states[state]
-        capture_job.save(update_fields=['scoop_logs', 'scoop_state'])
+            capture_job.save(update_fields=['scoop_state'])
 
         if poll_data['status'] == 'success':
             success = True
         else:
+            # Save logs for debugging
+            capture_job.scoop_logs = poll_data
+            capture_job.save(update_fields=['scoop_logs'])
+
+            # Tag particular errors we are tracking
             killed = "\nKilled\n"
             didnt_load = "ERROR Navigation to page failed (about:blank)"
             proxy_error = "ERROR An error occurred during capture setup"
