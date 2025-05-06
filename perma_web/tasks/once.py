@@ -10,7 +10,7 @@ from django.conf import settings
 from django.db import connections
 from django.db.models import Count
 
-from perma.models import Folder, Link, LinkUser, Organization
+from perma.models import Folder, Link, LinkUser, Organization, CaptureJob
 
 import logging
 logger = logging.getLogger(__name__)
@@ -227,3 +227,22 @@ def populate_folder_cached_path(ctx, batch_size=500):
             logger.info(f"Stopped with ~ {remaining_to_update} remaining folders to update")
     else:
         logger.info("No more folders left to update!")
+
+
+@task
+def clear_successful_scoop_logs(ctx, batch_size=500):
+    logger.info("BEGIN: clear_successful_scoop_logs")
+    capture_job_ids = CaptureJob.objects.filter(
+        scoop_job_id__isnull=False
+    ).exclude(
+        status="failed"
+    ).values_list('id', flat=True)
+
+    capture_job_ids = list(capture_job_ids)
+    logger.info(f"Found {len(capture_job_ids)} capture jobs to update.")
+
+    for i in tqdm(range(0, len(capture_job_ids), batch_size)):
+        batch = capture_job_ids[i:i + batch_size]
+        CaptureJob.objects.filter(id__in=batch).update(scoop_logs=None)
+
+    logger.info("END: clear_successful_scoop_logs")
