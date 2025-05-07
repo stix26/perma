@@ -1,7 +1,7 @@
 """
 Perma's email addresses used to be case-sensitive, so users could actually
 have multiple accounts, with the same address capitalized differently.
-We merged accounts using the below tasks, and made login etc. case-insenstivie.
+We merged accounts using the below tasks, and made login etc. case-insensitive.
 """
 from collections import defaultdict
 import csv
