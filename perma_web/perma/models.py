@@ -2093,14 +2093,6 @@ class Link(DeletableModel):
         if job and not job.superseded and job.status != 'completed':
             successful_metadata = False
 
-        if settings.CHECK_WARC_BEFORE_PLAYBACK:
-            # I assert that the presence of a warc in storage means a Link
-            # can be played back. If there is a disconnect between our metadata and
-            # the contents of storage... something is wrong and needs fixing.
-            has_warc = storages[settings.WARC_STORAGE].exists(self.warc_storage_file())
-            if successful_metadata != has_warc:
-                logger.error(f"Conflicting metadata about {self.guid}: has_warc={has_warc}, successful_metadata={successful_metadata}")
-
         # Trust our records (the metadata) more than has_warc
         return successful_metadata
 
@@ -2184,6 +2176,7 @@ class CaptureJob(models.Model):
             (1) sorting the capture queue fairly and
             (2) reporting status during a capture.
     """
+    creation_timestamp = models.DateTimeField(auto_now=True, blank=True, null=True, db_index=True)
     link = models.OneToOneField(Link, related_name='capture_job', null=True, blank=True, on_delete=models.CASCADE)
     status = models.CharField(max_length=15,
                               default='invalid',

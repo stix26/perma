@@ -563,8 +563,6 @@ MAX_ARCHIVE_FILE_SIZE = 1024 * 1024 * 100  # 100 MB
 # set to the Scoop API's own 502 threshold, currently 60s, plus two seconds for network conditions
 RESOURCE_LOAD_TIMEOUT = 60 + 2
 
-CHECK_WARC_BEFORE_PLAYBACK = False
-
 # tests
 TEST_RUNNER = 'django.test.runner.DiscoverRunner'  # In Django 1.7, including this silences a warning about tests
 TESTING = False
