@@ -22,7 +22,7 @@ services:
       - default
       - superset
   web:
-    image: registry.lil.tools/harvardlil/perma-web:134-083b0a5b31e2aa7d4d2abef79acda6f7
+    image: registry.lil.tools/harvardlil/perma-web:135-06ce07e49e255c25b4fcfe073801ed6c
     tty: true
     command: bash
     # TO AUTOMATICALLY START PERMA:
