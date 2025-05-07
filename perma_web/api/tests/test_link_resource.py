@@ -677,7 +677,7 @@ class LinkResourceTransactionTestCase(LinkResourceTestMixin, ApiResourceTransact
 
             self.assertIn(b'Enter a valid URL', obj.content)
 
-    def test_should_should_create_archive_from_jpg_file_with_nonloading_url(self):
+    def test_should_create_archive_from_jpg_file_with_nonloading_url(self):
         with open(os.path.join(TEST_ASSETS_DIR, 'target_capture_files', 'test.jpg'), 'rb') as test_file:
             obj = self.successful_post(self.list_url,
                                        format='multipart',
