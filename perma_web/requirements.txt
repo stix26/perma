@@ -974,9 +974,9 @@ ua-parser==0.10.0 \
     --hash=sha256:46ab2e383c01dbd2ab284991b87d624a26a08f72da4d7d413f5bfab8b9036f8a \
     --hash=sha256:47b1782ed130d890018d983fac37c2a80799d9e0b9c532e734c67cf70f185033
     # via -r requirements.in
-urllib3==2.2.2 \
-    --hash=sha256:a448b2f64d686155468037e1ace9f2d2199776e17f0a46610480d311f73e3472 \
-    --hash=sha256:dd505485549a7a552833da5e6063639d0d177c04f23bc3864e41e5dc5f612168
+urllib3==2.5.0 \
+    --hash=sha256:3fc47733c7e419d4bc3f6b3dc2b4f890bb743906a30d56ba4a5bfa4bbff92760 \
+    --hash=sha256:e6b01673c0fa6a13e374b50871808eb3bf7046c4b125b216f6bf1cc604cff0dc
     # via
     #   botocore
     #   internetarchive
