@@ -139,10 +139,6 @@ click-repl==0.2.0 \
     --hash=sha256:94b3fbbc9406a236f176e0506524b2937e4b23b6f4c0c0b2a0a83f8a64e9194b \
     --hash=sha256:cd12f68d745bf6151210790540b4cb064c7b13e571bc64b6957d98d120dacfd8
     # via celery
-contextlib2==21.6.0 \
-    --hash=sha256:3fbdb64466afd23abaf6c977627b75b6139a5a3e8ce38405c5b413aed7a0471f \
-    --hash=sha256:ab1e2bfe1d01d968e1b7e8d9023bc51ef3509bba217bb730cee3827e1ee82869
-    # via schema
 coverage[toml]==7.4.3 \
     --hash=sha256:0209a6369ccce576b43bb227dc8322d8ef9e323d089c6f3f26a597b09cb4d2aa \
     --hash=sha256:062b0a75d9261e2f9c6d071753f7eef0fc9caf3a2c82d36d76667ba7b6470003 \
@@ -325,9 +321,6 @@ djangorestframework==3.15.2 \
     --hash=sha256:2b8871b062ba1aefc2de01f773875441a961fefbf79f5eed1e32b2f096944b20 \
     --hash=sha256:36fe88cd2d6c6bec23dca9804bab2ba5517a8bb9d8f47ebc68981b56840107ad
     # via -r requirements.in
-docopt==0.6.2 \
-    --hash=sha256:49b3a825280bd66b3aa83585ef59c4a8c82f2c8a522dbe754a8bc8d08c85c491
-    # via internetarchive
 execnet==1.9.0 \
     --hash=sha256:8f694f3ba9cc92cab508b152dcfe322153975c29bda272e2fd7f3f00f36e47c5 \
     --hash=sha256:a295f7cc774947aac58dde7fdc85f4aa00c42adf5d8f5468fc630c1acf30a142
@@ -356,8 +349,9 @@ flake8==7.0.0 \
     --hash=sha256:33f96621059e65eec474169085dc92bf26e7b2d47366b70be2f67ab80dc25132 \
     --hash=sha256:a6dfbb75e03252917f2473ea9653f7cd799c3064e54d4c8140044c5c065f53c3
     # via -r requirements.in
-future==0.18.3 \
-    --hash=sha256:34a17436ed1e96697a86f9de3d15a3b0be01d8bc8de9c1dffd59fb8234ed5307
+future==1.0.0 \
+    --hash=sha256:929292d34f5872e70396626ef385ec22355a1fae8ad29e1a734c3e43f9fbc216 \
+    --hash=sha256:bd2968309307861edae1458a4f8a4f3598c03be43b97521076aebf5d94c07b05
     # via django-json-widget
 greenlet==3.0.3 \
     --hash=sha256:01bc7ea167cf943b4c802068e178bbf70ae2e8c080467070d01bfa02f337ee67 \
@@ -433,8 +427,9 @@ iniconfig==1.1.1 \
     --hash=sha256:011e24c64b7f47f6ebd835bb12a743f2fbe9a26d4cecaa7f53bc4f35ee9da8b3 \
     --hash=sha256:bc3af051d7d14b2ee5ef9969666def0cd1a000e121eaea580d4a313df4b37f32
     # via pytest
-internetarchive==3.0.0 \
-    --hash=sha256:7d172ab13f29feda97529536ffd940105d484fc0b2e4a2b4fa329a795c19b212
+internetarchive==5.5.1 \
+    --hash=sha256:0564a82206ad8df78d00b30aa1477d5214c411e89280099cc6b24240fbe06894 \
+    --hash=sha256:e49b1681222ca9b4ff6db333b79c60ac3a1f16f0a87216431b4208adac8e5aaa
     # via -r requirements.in
 invoke==2.0.0 \
     --hash=sha256:7ab5dd9cd76b787d560a78b1a9810d252367ab595985c50612702be21d671dd7 \
@@ -896,10 +891,6 @@ s3transfer==0.10.2 \
     --hash=sha256:0711534e9356d3cc692fdde846b4a1e4b0cb6519971860796e6bc4c7aea00ef6 \
     --hash=sha256:eca1c20de70a39daee580aef4986996620f365c4e0fda6a86100231d62f1bf69
     # via boto3
-schema==0.7.5 \
-    --hash=sha256:f06717112c61895cabc4707752b88716e8420a8819d71404501e114f91043197 \
-    --hash=sha256:f3ffdeeada09ec34bf40d7d79996d9f7175db93b7a5065de0faa7f41083c1e6c
-    # via internetarchive
 sentry-sdk==2.12.0 \
     --hash=sha256:7a8d5163d2ba5c5f4464628c6b68f85e86972f7c636acc78aed45c61b98b7a5e \
     --hash=sha256:8763840497b817d44c49b3fe3f5f7388d083f2337ffedf008b2cdb63b5c86dc6
